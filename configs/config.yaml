@@ -1,0 +1,86 @@
+# ---------------------------------------------------------------
+# SignBangla - Phase 1 (Weeks 1-3) configuration
+# ---------------------------------------------------------------
+paths:
+  dataset_root: "data/BdSLW60"          # folder that contains W1-2, W3-4, ... (the Kaggle download)
+  work_dir: "work"                      # all outputs go here (relative to the project folder)
+
+video:
+  extensions: [".mp4", ".avi", ".mov", ".mkv", ".webm"]
+  view: "F"                             # BdSLW60 releases the front view only; other views are skipped
+  rotate_180:                           # stored upside down: frames are turned upright before keypoint extraction
+    [U1W215F, U1W216F, U1W217F, U1W218F, U1W219F, U1W220F, U9W96F, U12W220F,
+     U17W351F, U17W352F, U17W353F, U17W354F, U17W355F, U17W356F, U17W357F, U17W358F, U17W359F, U17W360F]
+
+keypoints:
+  # 67 keypoints = 25 pose (indices 0-24: head, shoulders, arms, hands, hips)
+  #              + 21 left hand + 21 right hand.  Legs (pose 25-32) and face mesh are dropped.
+  model_complexity: 1                   # 0 = faster, 1 = default, 2 = most accurate
+  smooth_landmarks: true
+  min_detection_confidence: 0.5
+  min_tracking_confidence: 0.5
+
+annotation:
+  # Each BdSLW60 video holds 10-15 repetitions of one sign. The per-word JSON files give
+  # start/end frames of every repetition ("trial"). Key names are matched with these regexes
+  # (case-insensitive, punctuation turned into spaces). First pattern that matches wins.
+  start_key_patterns: ["actual start", "^start", "start", "begin"]
+  end_key_patterns: ["gesture end", "^end", "end"]
+  frame_base: 0                         # 0 if frame numbers start at 0, 1 if they start at 1
+  end_inclusive: true                   # true: the end frame belongs to the trial
+  min_trial_frames: 3
+
+quality:
+  min_frames: 5                         # shorter trials are flagged
+  min_pose_frac: 0.80                   # fraction of frames with a detected upper body
+  min_best_hand_frac: 0.50              # at least one hand must be seen in half of the frames
+
+preprocess:
+  target_frames: 64
+  max_gap_hand: 6                       # missing-hand gaps up to this many frames are interpolated
+  max_gap_pose: 15
+  min_valid_frames: 2                   # a body part seen in fewer frames than this counts as absent
+  mirror_left_dominant: false           # plan says: do NOT flip left/right (see README, "Hand dominance")
+
+splits:
+  test_signers: [4, 8]                  # same two signers the dataset paper uses as its test set
+  n_val_signers: 2
+  min_val_trials: 500                   # validation signers are picked among signers with enough trials
+  seed: 42
+  expected_train_signers: 14
+
+augment:                                # training split only. No left/right flip.
+  p: 0.5                                # probability of applying each augmentation
+  rotation_deg: 10
+  scale: [0.9, 1.1]
+  shift: 0.10                           # in shoulder-width units
+  temporal_crop_max: 0.10               # drop up to 10% from the start/end (imitates sloppy segmentation)
+  time_warp: 0.25                       # speed variation inside the sign
+  noise_std: 0.01
+
+dataloader:
+  batch_size: 64
+  num_workers: 0                        # keep 0 on Windows
+  flatten_features: true                # (T, 67, 3) -> (T, 201)
+  preload: false                        # true = keep all processed sequences in RAM (~0.5 GB)
+
+speech2sign:                            # Module 2 (Speech -> Sign)
+  dictionary_dir: "sign_dictionary"     # inside work_dir
+  font: "assets/fonts/NotoSansBengali.ttf"
+  fps: 30                               # trials are resampled to this rate by their real duration
+  n_trials: 3                           # trials kept per word
+  hand_weight: 0.5                      # trial ranking: penalty for frames where the signing hand was not detected
+  stitch:
+    n_transition: 12                    # frames between two signs (0 = hard cut)
+    easing: "cosine"                    # linear | cosine | cubic | minimum_jerk
+    n_rest: 15                          # frames held in the rest pose at the start and end
+    idle_rel_speed: 0.10                # a frame is idle below this fraction of the sign's peak speed ...
+    idle_min_speed: 0.005               # ... or below this speed (shoulder widths per frame)
+    idle_margin: 1                      # idle frames kept next to the movement
+    idle_max_frac: 0.15                 # never trim more than this from each end: a held hand can be the sign
+    min_sign_frames: 8                  # signs that would get shorter than this are not trimmed
+  render:
+    size: 720                           # skeleton area in pixels (square)
+    view: [-1.9, 1.9, -1.7, 2.1]        # x min, x max, y min, y max in shoulder widths
+    caption_height: 110
+    font_size: 56

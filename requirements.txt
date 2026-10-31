@@ -1,0 +1,13 @@
+# Python 3.10 - 3.12 recommended
+numpy<2
+pandas
+matplotlib>=3.11  # 3.11 added the text shaping that Bangla captions need (signbangla/speech2sign/render.py)
+pillow
+imageio-ffmpeg  # brings its own ffmpeg, for H.264 video on every OS (signbangla/speech2sign/render.py)
+pyyaml
+tqdm
+# Pinned on purpose: newer mediapipe releases removed the legacy mp.solutions.holistic API.
+# This also installs OpenCV (cv2) for you.
+mediapipe==0.10.14
+torch
+scikit-learn

@@ -1,0 +1,35 @@
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Dataset and generated outputs (shared as a zip on Google Drive, see README)
+data/
+work/
+*.zip
+
+# Old presentation, shows results from before the full split
+SignBangla_Phase1_Progress_Presentation.pdf
+
+# Video files
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.webm
+
+# Credentials
+kaggle.json
+.kaggle/
+.env
+
+# OS specific
+.DS_Store
+Thumbs.db
