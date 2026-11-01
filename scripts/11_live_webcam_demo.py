@@ -21,7 +21,7 @@ import torch.nn.functional as F
 
 from signbangla.keypoints import GROUPS, N_KP, make_holistic, results_to_frame
 from signbangla.labels import LABELS
-from signbangla.models import BiGRUClassifier
+from signbangla.models import BiGRUClassifier, BiLSTMClassifier
 from signbangla.preprocess import PreprocessError, preprocess_trial
 from signbangla.utils import load_config, work_dir
 from signbangla.viz import CONNECTIONS
@@ -30,7 +30,9 @@ from signbangla.viz import CONNECTIONS
 def load_model(checkpoint_path, device):
     checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
     cfg = checkpoint.get("config", {})
-    model = BiGRUClassifier(
+    model_type = cfg.get("model_type", "bigru")
+    model_cls = BiLSTMClassifier if model_type == "bilstm" else BiGRUClassifier
+    model = model_cls(
         input_dim=cfg.get("input_dim", 201),
         hidden_dim=cfg.get("hidden_dim", 128),
         num_layers=cfg.get("num_layers", 2),

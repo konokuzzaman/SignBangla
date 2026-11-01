@@ -122,3 +122,96 @@ class BiGRUClassifier(nn.Module):
         # Classification
         logits = self.classifier(pooled)
         return logits
+
+
+class BiLSTMClassifier(nn.Module):
+    """Bidirectional LSTM with input projection and temporal attention pooling.
+
+    Input shape: (batch, seq_len=64, input_dim=201)
+    Output shape: (batch, num_classes=60)
+    """
+
+    def __init__(
+        self,
+        input_dim: int = 201,
+        hidden_dim: int = 128,
+        num_layers: int = 2,
+        num_classes: int = N_CLASSES,
+        dropout: float = 0.3,
+        use_attention: bool = True,
+    ):
+        super().__init__()
+        self.input_dim = input_dim
+        self.hidden_dim = hidden_dim
+        self.num_layers = num_layers
+        self.num_classes = num_classes
+        self.use_attention = use_attention
+
+        # Spatial projection & input normalization
+        self.input_proj = nn.Sequential(
+            nn.Linear(input_dim, hidden_dim),
+            nn.LayerNorm(hidden_dim),
+            nn.GELU(),
+            nn.Dropout(dropout / 2.0),
+        )
+
+        # Multi-layer Bidirectional LSTM
+        lstm_dropout = dropout if num_layers > 1 else 0.0
+        self.lstm = nn.LSTM(
+            input_size=hidden_dim,
+            hidden_size=hidden_dim,
+            num_layers=num_layers,
+            batch_first=True,
+            bidirectional=True,
+            dropout=lstm_dropout,
+        )
+
+        lstm_out_dim = hidden_dim * 2  # Bidirectional
+
+        # Temporal pooling
+        if use_attention:
+            self.attention = TemporalAttention(lstm_out_dim)
+        else:
+            self.attention = None
+
+        self.layer_norm = nn.LayerNorm(lstm_out_dim)
+
+        # Classification Head
+        self.classifier = nn.Sequential(
+            nn.Dropout(dropout),
+            nn.Linear(lstm_out_dim, hidden_dim),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_dim, num_classes),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass.
+
+        Args:
+            x: Tensor of shape (batch, seq_len, input_dim) or (batch, seq_len, 67, 3)
+
+        Returns:
+            logits: Tensor of shape (batch, num_classes)
+        """
+        if x.ndim == 4:
+            x = x.reshape(x.shape[0], x.shape[1], -1)
+
+        # Project input to hidden_dim
+        h = self.input_proj(x)  # (B, T, hidden_dim)
+
+        # BiLSTM encoding
+        out, _ = self.lstm(h)  # (B, T, 2 * hidden_dim)
+
+        # Pooling across time
+        if self.attention is not None:
+            pooled, _ = self.attention(out)
+        else:
+            pooled = out.mean(dim=1)
+
+        pooled = self.layer_norm(pooled)
+
+        # Classification
+        logits = self.classifier(pooled)
+        return logits
+
