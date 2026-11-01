@@ -7,7 +7,7 @@ Teammates work on Module 1 and the repo owner works on Module 2.
 | Belongs to | Paths |
 |---|---|
 | **Module 1** (Sign → Speech) | `scripts/01_*` to `scripts/11_*`, `signbangla/annotations.py`, `dataset.py`, `metrics.py`, `models.py`, `pipeline.py`, `quality.py`, `tests/test_pipeline.py`, `work/results/`, `work/eval_demo/`, `work/mediapipe_test/`, `work/quality_plots/` |
-| **Module 2** (Speech → Sign) | `signbangla/speech2sign/`, `scripts/20_*`, `tests/test_speech2sign.py`, `assets/fonts/`, `work/sign_dictionary/` |
+| **Module 2** (Speech → Sign) | `signbangla/speech2sign/`, `scripts/20_*`, `scripts/21_*`, `requirements-m2.txt`, `tests/test_speech2sign.py`, `tests/test_text_processing.py`, `assets/fonts/`, `work/sign_dictionary/` |
 | **Shared** | `signbangla/keypoints.py`, `labels.py`, `preprocess.py`, `utils.py`, `viz.py`, `signbangla/__init__.py`, `configs/config.yaml`, `requirements.txt`, `README.md`, `TEAM_NOTES.md`, `.gitignore`, `data/`, `work/raw_keypoints/`, `work/trials/`, `work/processed/`, `work/*.csv` |
 
 ## Where `work/` comes from
@@ -40,7 +40,7 @@ Module 2 imports the shared code and reads the keypoint files, so a change there
 | `signbangla/keypoints.py` | `extract_video` takes `rotate_180` and records `rotated_180` in the video's `.json` |
 | `signbangla/viz.py` | `write_preview_video` takes `rotate_180` |
 | `signbangla/pipeline.py` | New `rotated_stems` and `needs_extraction` |
-| `configs/config.yaml` | New `video.rotate_180` list of the 18 videos |
+| `configs/config.yaml` | New `video.rotate_180` list of the 18 videos. New Module 2 settings under `speech2sign`: `gif`, `audio`, `asr`, `matching`, `demo` |
 | `requirements.txt` | Added `imageio-ffmpeg`, which Module 2 uses to write H.264 video |
 | `scripts/02_test_mediapipe.py` | Turns the listed videos upright |
 | `scripts/03_extract_keypoints.py` | Turns the listed videos upright, and redoes any listed video not yet marked `rotated_180` |
