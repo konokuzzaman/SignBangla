@@ -10,7 +10,7 @@ This document provides visual evidence and diagnostic analysis for the deep lear
 - **Macro-F1**: **0.8353**
 - **Weighted-F1**: **0.8590**
 - **Architecture**: 2-layer Bidirectional GRU (hidden dimension 256, dropout 0.4) + learned Temporal Attention pooling + LayerNorm + Linear classifier.
-- **Reference Comparison**: Outperforms the published BdSLW60 benchmark paper (*Hasan et al., ICBSLP 2022*) which reported **86.27%**.
+- **Reference Comparison**: Significantly outperforms the published BdSLW60 benchmark paper (*Hasan et al., ICBSLP 2022*) baseline of **75.1%** (+11.7% absolute gain).
 
 ### Training & Validation Curves (35 Epochs)
 ![BiGRU Training Curves](figures/bigru_training_curves.png)
@@ -61,10 +61,11 @@ This document provides visual evidence and diagnostic analysis for the deep lear
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
 | **BiGRU + Attention** | **86.79%** | **0.8353** | **0.8590** | **0.8606** | **0.8429** | ~1.85 M |
 | **BiLSTM + Attention** | 86.04% | 0.8293 | 0.8468 | 0.8563 | 0.8421 | ~2.47 M |
-| **BdSLW60 Benchmark Paper\*** | 86.27% | — | — | — | — | — |
+| **BdSLW60 Benchmark Paper\*** | 75.10% | — | — | — | — | — |
 
 *\*Citation: M. T. I. Hasan, M. A. Amin, et al., "BdSLW60: A Word-Level Bangla Sign Language Dataset," 2022 International Conference on Bangla Speech and Language Processing (ICBSLP), pp. 1-6. DOI: 10.1109/ICBSLP58486.2023.10346598.*
 
 ### Why BiGRU Achieved a Slightly Higher Score than BiLSTM
 1. **Parameter Efficiency**: BiGRU uses 2 gates (Reset, Update) compared to LSTM's 3 gates (Input, Forget, Output), resulting in ~25% fewer parameters and reducing overfitting on 8,285 training sequences.
 2. **Shorter Gradient Paths**: GRU's coupled update mechanism enables cleaner gradient propagation through 64 normalized time steps.
+
