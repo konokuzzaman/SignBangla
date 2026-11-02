@@ -28,6 +28,13 @@ from signbangla.metrics import evaluate, evaluate_and_save
 from signbangla.models import BiGRUClassifier, BiLSTMClassifier
 from signbangla.utils import load_config, work_dir
 
+try:
+    import wandb
+    HAS_WANDB = True
+except ImportError:
+    HAS_WANDB = False
+
+
 
 def set_seed(seed: int = 42):
     random.seed(seed)
@@ -135,6 +142,10 @@ def main():
     ap.add_argument("--device", default="auto", help="Execution device: auto, cpu, cuda, or mps")
     ap.add_argument("--out-dir", default=None, help="Directory to save checkpoints and metrics (default: work/results/<model_type>)")
     ap.add_argument("--seed", type=int, default=42, help="Random seed")
+    ap.add_argument("--wandb", action="store_true", help="Enable Weights & Biases experiment tracking")
+    ap.add_argument("--wandb-project", default="SignBangla", help="Weights & Biases project name")
+    ap.add_argument("--wandb-run-name", default=None, help="Weights & Biases custom run name")
+    ap.add_argument("--wandb-offline", action="store_true", help="Run Weights & Biases in offline mode")
     args = ap.parse_args()
 
     set_seed(args.seed)
@@ -144,6 +155,35 @@ def main():
 
     device = get_device(args.device)
     model_name = "BiLSTM" if args.model_type == "bilstm" else "BiGRU"
+
+    use_wandb = args.wandb
+    if use_wandb and not HAS_WANDB:
+        print("[!] wandb is not installed in environment. Proceeding without W&B logging.")
+        use_wandb = False
+
+    if use_wandb:
+        run_name = args.wandb_run_name or f"{args.model_type}-baseline-s{args.seed}"
+        mode = "offline" if args.wandb_offline else "online"
+        wandb.init(
+            project=args.wandb_project,
+            name=run_name,
+            mode=mode,
+            config={
+                "model_type": args.model_type,
+                "epochs": args.epochs,
+                "lr": args.lr,
+                "weight_decay": args.weight_decay,
+                "hidden_dim": args.hidden_dim,
+                "num_layers": args.num_layers,
+                "dropout": args.dropout,
+                "use_attention": not args.no_attention,
+                "weighted_loss": args.weighted_loss,
+                "seed": args.seed,
+                "device": str(device),
+            }
+        )
+        print(f"[W&B] Initialized project '{args.wandb_project}', run '{run_name}' (mode: {mode})")
+
     print(f"============================================================")
     print(f"  SignBangla - {model_name} Baseline Training (Phase 2 / Week 4)   ")
     print(f"============================================================")
@@ -231,6 +271,21 @@ def main():
                 }
             }, best_checkpoint_path)
 
+        if use_wandb:
+            wandb.log({
+                "epoch": epoch,
+                "train/loss": train_loss,
+                "train/acc": train_acc,
+                "val/loss": val_loss,
+                "val/acc": val_acc,
+                "val/macro_f1": val_f1,
+                "learning_rate": current_lr,
+            }, step=epoch)
+            if is_best:
+                wandb.run.summary["best_val_macro_f1"] = val_f1
+                wandb.run.summary["best_val_acc"] = val_acc
+                wandb.run.summary["best_epoch"] = epoch
+
         flag = " *" if is_best else ""
         print(f"{epoch:<6d} | {train_loss:<10.4f} | {train_acc:<10.2%} | {val_loss:<10.4f} | {val_acc:<10.2%} | {val_f1:<12.4f} | {current_lr:<9.2e}{flag}")
 
@@ -280,6 +335,53 @@ def main():
     print(" - test_confusion_matrix.png & .csv (Row-normalized confusion matrix)")
     print(" - test_per_class.csv (Per-class precision, recall, F1, support)")
     print(" - test_confused_pairs.csv (Top confusion pairs)")
+
+    if use_wandb:
+        print("\n[W&B] Syncing test evaluation metrics and interactive charts...")
+        wandb.log({
+            "test/loss": test_loss,
+            "test/accuracy": r_test["accuracy"],
+            "test/macro_f1": r_test["macro_f1"],
+            "test/weighted_f1": r_test["weighted_f1"],
+            "test/macro_precision": r_test["macro_precision"],
+            "test/macro_recall": r_test["macro_recall"],
+        })
+        for k, v in r_test.items():
+            if isinstance(v, (int, float)):
+                wandb.run.summary[f"test_{k}"] = v
+
+        # Interactive Confusion Matrix
+        eng_names = class_names("english")
+        wandb.log({
+            "test/interactive_confusion_matrix": wandb.plot.confusion_matrix(
+                probs=None,
+                y_true=y_test_true.tolist(),
+                preds=y_test_pred.tolist(),
+                class_names=eng_names,
+            )
+        })
+
+        # Per-class table
+        if "per_class" in r_test and isinstance(r_test["per_class"], pd.DataFrame):
+            wandb.log({"test/per_class_table": wandb.Table(dataframe=r_test["per_class"])})
+
+        # Top confused pairs table
+        if "confused_pairs" in r_test and isinstance(r_test["confused_pairs"], pd.DataFrame):
+            wandb.log({"test/confused_pairs_table": wandb.Table(dataframe=r_test["confused_pairs"])})
+
+        # Static curves image
+        if (out_dir / "training_curves.png").exists():
+            wandb.log({"plots/training_curves": wandb.Image(str(out_dir / "training_curves.png"))})
+        if (out_dir / "test_confusion_matrix.png").exists():
+            wandb.log({"plots/confusion_matrix": wandb.Image(str(out_dir / "test_confusion_matrix.png"))})
+
+        # Checkpoint artifact
+        artifact = wandb.Artifact(f"{args.model_type}-model", type="model")
+        artifact.add_file(str(best_checkpoint_path))
+        wandb.log_artifact(artifact)
+
+        wandb.finish()
+        print("[W&B] Run successfully completed and synced to your dashboard!")
 
 
 if __name__ == "__main__":
