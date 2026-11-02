@@ -20,6 +20,7 @@ SignBangla_Phase1_Progress_Presentation.pdf
 
 # Video files
 *.mp4
+!assets/videos/*.mp4
 *.avi
 *.mov
 *.mkv
