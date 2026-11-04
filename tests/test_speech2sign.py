@@ -15,11 +15,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import cv2
 import numpy as np
 import pandas as pd
+from PIL import Image
 
 from signbangla.keypoints import GROUPS, N_KP
 from signbangla.speech2sign.dictionary import (SignDictionary, build_dictionary, group_present, is_upright, rank_trials,
                                                split_variants, trial_to_fps)
-from signbangla.speech2sign.render import CaptionDrawer, draw_skeleton, render_video
+from signbangla.speech2sign.render import CaptionDrawer, draw_skeleton, render_video, save_animation
 from signbangla.speech2sign.stitch import (EASINGS, fill_absent_hands, frame_captions, get_easing, stitch, stitch_words,
                                            transition, trim_idle)
 from signbangla.utils import ROOT, atomic_save_npy, atomic_write_json, load_config
@@ -319,8 +320,26 @@ def test_render_video():
                 pass
 
 
+def test_save_animation_gif():
+    rest = np.zeros((N_KP, 3), np.float32)
+    rest[:, 0] = np.linspace(-1, 1, N_KP)
+    seq = np.repeat(rest[None], 60, axis=0)  # 2 s at 30 fps
+    with tempfile.TemporaryDirectory() as d:
+        path = Path(d) / "a.gif"
+        n = save_animation(seq, path, fps=30, gif_fps=15, gif_width=240, size=120)
+        assert n == 30 and path.exists() and not list(Path(d).glob("*.tmp*"))
+        with Image.open(path) as gif:
+            assert gif.format == "GIF" and gif.size == (240, 240) and gif.n_frames >= 1
+        assert save_animation(seq, Path(d) / "a.mp4", fps=30, size=120) == 60
+        try:
+            save_animation(seq, Path(d) / "a.avi")
+            raise AssertionError("an unknown extension must raise")
+        except ValueError:
+            pass
+
+
 if __name__ == "__main__":
-    tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
+    tests =[v for k, v in sorted(globals().items()) if k.startswith("test_")]
     for t in tests:
         t()
         print(f"{t.__name__} ok")

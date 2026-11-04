@@ -84,3 +84,25 @@ speech2sign:                            # Module 2 (Speech -> Sign)
     view: [-1.9, 1.9, -1.7, 2.1]        # x min, x max, y min, y max in shoulder widths
     caption_height: 110
     font_size: 56
+  gif:
+    fps: 15                             # GIFs get large, so they use fewer frames and pixels than the mp4
+    width: 480
+  audio:
+    sample_rate: 16000                  # Whisper expects 16 kHz
+    device: null                        # null = the default microphone
+    min_seconds: 0.3                    # shorter or quieter recordings are not sent to Whisper, which invents text for them
+    min_rms: 0.01                       # loudest 30 ms of the recording, on a scale of 0 to 1
+  asr:
+    model: "bangla-speech-processing/BanglaASR"  # any Whisper model on Hugging Face, e.g. openai/whisper-small
+    language: "bn"
+    device: "auto"                      # auto | cuda | cpu
+    max_new_tokens: 64                  # a Bangla word costs about 11 tokens
+    generation_config_from: "openai/whisper-small"  # used for fine-tuned models whose own config is too old
+  matching:
+    fuzzy_cutoff: 0.8                   # fuzzy matches need at least this similarity (0 to 1)
+    min_fuzzy_chars: 4                  # shorter words must match exactly
+    fuzzy_margin: 0.02                  # two words this close to the best score count as unknown
+  demo:
+    window_height: 800                  # height of the OpenCV window in pixels
+    bar_height: 70                      # the recognized-text and unknown-word bars
+    bar_font_size: 36

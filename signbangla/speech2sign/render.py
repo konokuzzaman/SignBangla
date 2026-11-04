@@ -117,3 +117,36 @@ def render_video(seq, path, fps=30, **kw):
         raise IOError(f"ffmpeg failed with exit code {encoder.returncode} while writing {tmp}")
     os.replace(tmp, path)
     return n
+
+
+def render_gif(seq, path, fps=30, gif_fps=15, gif_width=480, **kw):
+    """Write the animation to a GIF, at a lower frame rate and size because GIFs get large. One palette for the whole
+    file stops colours flickering between frames. Returns the number of frames written."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    frames = [cv2.cvtColor(img, cv2.COLOR_BGR2RGB) for i, img in enumerate(render_frames(seq, **kw))
+              if int(i * gif_fps / fps) != int((i - 1) * gif_fps / fps) or i == 0]
+    if not frames:
+        raise ValueError("no frames to render")
+    h, w = frames[0].shape[:2]
+    size = (gif_width, int(round(h * gif_width / w)))
+    images = [Image.fromarray(f).resize(size, Image.Resampling.LANCZOS) for f in frames]
+    palette = Image.fromarray(np.hstack([np.asarray(im) for im in images[::max(1, len(images) // 16)]])).quantize(64)
+    paletted = [im.quantize(palette=palette, dither=Image.Dither.NONE) for im in images]
+    # GIF timing is in hundredths of a second. Rounding the running total keeps the length right for any gif_fps.
+    ends = [int(round((i + 1) * 100 / gif_fps)) * 10 for i in range(len(paletted))]
+    durations = [b - a for a, b in zip([0, *ends], ends)]
+    tmp = path.with_name(path.stem + ".tmp.gif")
+    paletted[0].save(tmp, save_all=True, append_images=paletted[1:], duration=durations, loop=0, optimize=False)
+    os.replace(tmp, path)
+    return len(paletted)
+
+
+def save_animation(seq, path, fps=30, gif_fps=15, gif_width=480, **kw):
+    """Write .gif or .mp4, chosen by the file extension. Returns the number of frames written."""
+    suffix = Path(path).suffix.lower()
+    if suffix == ".gif":
+        return render_gif(seq, path, fps=fps, gif_fps=gif_fps, gif_width=gif_width, **kw)
+    if suffix == ".mp4":
+        return render_video(seq, path, fps=fps, **kw)
+    raise ValueError(f"cannot save {path}: use .mp4 or .gif")
