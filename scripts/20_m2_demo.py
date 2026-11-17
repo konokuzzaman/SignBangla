@@ -10,7 +10,7 @@ import argparse
 import _path  # noqa: F401
 
 from signbangla.speech2sign.dictionary import SignDictionary
-from signbangla.speech2sign.render import render_video
+from signbangla.speech2sign.render import render_options, render_video
 from signbangla.speech2sign.stitch import EASINGS, frame_captions, stitch_words
 from signbangla.utils import ROOT, load_config, work_dir
 
@@ -40,7 +40,7 @@ def main():
         raise SystemExit(e.args[0].encode("ascii", "backslashreplace").decode())
     st = stitch_words(words, d, variant=args.variant, **params)
     out = args.out or work_dir(cfg) / "m2_demo.mp4"
-    n = render_video(st.seq, out, fps=d.fps, captions=frame_captions(st, args.text), font_path=ROOT / s2s["font"], **s2s["render"])
+    n = render_video(st.seq, out, fps=d.fps, captions=frame_captions(st, args.text), font_path=ROOT / s2s["font"], **render_options(s2s["render"]))
 
     for seg in st.segments:
         name = d.words[d.find(seg["label"])]["romanized"][0] if seg["label"] else ""

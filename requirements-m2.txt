@@ -1,0 +1,4 @@
+# Extra packages for the Module 2 speech demo (scripts/21_speech_to_sign_demo.py).
+# Install requirements.txt first, then: pip install -r requirements-m2.txt
+sounddevice  # microphone recording
+transformers>=5  # Whisper speech-to-text

@@ -153,7 +153,10 @@ def build_dictionary(cfg):
 
 
 class SignDictionary:
-    """Look words up by Bangla (any spelling variant), romanized, English or W-number, and load their sequences."""
+    """Look words up by Bangla (any spelling variant), romanized, English or key (W20, C001), and load their sequences.
+
+    The core dictionary (work/sign_dictionary_core) also has the poses of the digits ০-৯, so any number (২৫, 100) can be
+    signed digit by digit; a name made only of digits is such a number."""
 
     def __init__(self, folder):
         self.folder = folder
@@ -163,12 +166,31 @@ class SignDictionary:
         self.rest_pose = np.load(folder / self.info["rest_pose"])
         self._index = {}
         for word, e in self.words.items():
-            for name in (word, e["english"], *e["romanized"], *e["bangla"]):
-                self._index[normalize_word(name).lower()] = word
+            self._index[word.lower()] = word
+        for word, e in self.words.items():  # a name used by two words keeps the first one
+            for name in (e["english"], *e["romanized"], *e["bangla"]):
+                self._index.setdefault(normalize_word(name).lower(), word)
+        digits = self.info.get("digits")
+        self.digit_poses = np.load(folder / digits["poses"]) if digits else None
 
     @classmethod
     def from_config(cls, cfg):
         return cls(work_dir(cfg) / cfg["speech2sign"]["dictionary_dir"])
+
+    def number_digits(self, name):
+        """'২৫' or '25' -> '২৫' when every digit has a sign, else None."""
+        text = normalize_word(str(name)).translate(str.maketrans("0123456789", "০১২৩৪৫৬৭৮৯"))
+        if self.digit_poses is None or not text or any(ch not in "০১২৩৪৫৬৭৮৯" for ch in text):
+            return None
+        return text if all(np.abs(self.digit_poses["০১২৩৪৫৬৭৮৯".index(ch)]).sum() > 0 for ch in text) else None
+
+    def has(self, name):
+        """True when the word (any name or key) or the number has a sign."""
+        try:
+            self.find(name)
+            return True
+        except KeyError:
+            return self.number_digits(name) is not None
 
     def find(self, name):
         """Any known name -> 'W20'. KeyError if the word is not in the vocabulary."""
@@ -191,8 +213,22 @@ class SignDictionary:
         return out
 
     def sequence(self, name, variant=0):
-        """Trial number `variant` of a word as (T, 67, 3)."""
-        e = self.words[self.find(name)]
+        """Trial number `variant` of a word as (T, 67, 3) (the last one if the word has fewer). A number that is not a
+        word of its own is signed digit by digit: rest -> each digit's handshape, held -> rest."""
+        try:
+            e = self.words[self.find(name)]
+        except KeyError:
+            digits = self.number_digits(name)
+            if digits is None:
+                raise
+            return self.number_sequence(digits)
         frames = [t["frames"] for t in e["trials"]]
+        variant = min(variant, len(frames) - 1)
         start = sum(frames[:variant])
         return np.load(self.folder / e["file"], mmap_mode="r")[start:start + frames[variant]].copy()
+
+    def number_sequence(self, digits):
+        from .core_signs import hold_sign  # here to avoid a circular import
+        t = self.info["digits"]
+        poses = [self.digit_poses["০১২৩৪৫৬৭৮৯".index(ch)] for ch in digits]
+        return hold_sign(poses, self.rest_pose, t["move_frames"], t["hold_frames"], t["change_frames"])

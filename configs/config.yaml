@@ -64,6 +64,16 @@ dataloader:
   flatten_features: true                # (T, 67, 3) -> (T, 201)
   preload: false                        # true = keep all processed sequences in RAM (~0.5 GB)
 
+bdslw401:                               # second dataset, kept apart from BdSLW60 (scripts/30_*, scripts/31_*)
+  root: "data/BdSLW401"
+  kaggle_dataset: "hasanssl/bdslw401"
+  download_pattern: "^(Front/Front/(train|val|test)/W\\d{3}S\\d{2}F_\\d+\\.mp4|bdsl words-complete\\.pdf)$"  # front view + word list
+  download_workers: 8
+  work_subdir: "bdslw401"               # outputs go in this folder inside work_dir
+  rotate_180: []                        # upside-down clips: W351S17 = one signer's clips of one word, W351S17F_03 = one clip
+  priority_clips_per_word: 12           # extracted first, so the sign dictionary can be built early
+  priority_exclude_signers: [4, 8]      # the test signers
+
 speech2sign:                            # Module 2 (Speech -> Sign)
   dictionary_dir: "sign_dictionary"     # inside work_dir
   font: "assets/fonts/NotoSansBengali.ttf"
@@ -80,7 +90,149 @@ speech2sign:                            # Module 2 (Speech -> Sign)
     idle_max_frac: 0.15                 # never trim more than this from each end: a held hand can be the sign
     min_sign_frames: 8                  # signs that would get shorter than this are not trimmed
   render:
-    size: 720                           # skeleton area in pixels (square)
-    view: [-1.9, 1.9, -1.7, 2.1]        # x min, x max, y min, y max in shoulder widths
-    caption_height: 110
-    font_size: 56
+    style: "figure"                     # figure | neon | skeleton | studio3d (3D, in the browser; see studio3d below)
+    size: 640                           # picture in pixels (square); 640 x (640 + caption) = 640 x 736
+    view: [-1.9, 1.9, -1.7, 2.1]        # skeleton style: x min, x max, y min, y max in shoulder widths
+    caption_height: 96
+    font_size: 50
+    speed: 1.0                          # playback speed: 0.5, 0.75 or 1.0
+    fps: 60                             # output frame rate (motion is upsampled with smooth curves)
+  motion:                               # signbangla/speech2sign/motion.py, for every style
+    glitch_pose_threshold: 0.15         # a body point this far (shoulder widths) from its 5-frame median is a glitch...
+    glitch_hand_threshold: 0.10         # ... same for hand points
+    glitch_k: 4.0                       # ... and also k x its usual spread
+    smooth_pose_window: 9               # Savitzky-Golay frames for the body and the wrist path
+    smooth_hand_window: 5               # shorter for the finger shape, so handshape changes stay sharp
+    smooth_order: 3
+    pose_z_scale: 0.3                   # depth weight for body bone lengths (0.3 keeps them steadiest)
+    hand_z_scale: 1.0                   # depth weight for hand bone lengths (1.0 keeps them steadiest)
+    easing: "minimum_jerk"
+    transition_min_frames: 8            # transitions take 8-12 frames at 30 fps, longer for longer moves
+    transition_max_frames: 12
+    transition_ref_distance: 1.5        # wrist move (shoulder widths) that gets the longest transition
+    front_bias: 0.3                     # arms lean this much toward the camera halfway through a transition
+    hold_s: 0.2                         # hold the end of each sign this long
+    rest_start_s: 0.5                   # rest pose before the first sign
+    sentence_pause_s: 0.8               # rest pose after the last sign (a pause between sentences)
+  sentence:                             # stitch.sentence_motion: the motion for every style
+    savgol_window: 7                    # Savitzky-Golay smoothing of each sign (frames, at 30 fps)
+    savgol_order: 2
+    transition_frames: 16               # minimum-jerk transition between signs (at 30 fps)
+    hold_frames: 8                      # hold the end of each sign
+    rest_start_frames: 10
+    rest_end_frames: 12
+    upsample: 2                         # 30 fps dictionary -> 60 fps with a cubic spline
+  core_vocab:                           # core vocabulary from existing datasets (scripts/40-42, 20 --core)
+    word_list: "data/core_vocab/word_list.csv"
+    bdsl40_dir: "data/BdSL40"           # BdSL40 = INCLUDE videos verified as the same sign in BdSL
+    include_dir: "data/INCLUDE"         # Indian SL videos of words on our list: NOT verified for BdSL
+    bdsl49_dir: "data/BDSL49"           # still photos of the BdSL digits
+    work_subdir: "core_vocab"           # keypoints go in work/core_vocab/<source>/
+    dictionary_dir: "sign_dictionary_core"  # inside work_dir: BdSLW60 + BdSLW401 + core words
+    use_unverified_signs: false         # true: also use the INCLUDE (Indian SL) signs (rebuild the dictionary after)
+    videos_per_word: 8                  # INCLUDE/BdSL40 videos downloaded per word (3 are kept per word)
+    digit_images_per_class: 150         # BDSL49 photos downloaded per digit
+    download_workers: 6                 # Zenodo is slow per connection (~0.4 MB/s) but answers 429 to too many requests
+    trim_raise_frac: 0.7                # a wrist above this point between shoulders (0) and hips (1) counts as signing
+    trim_margin_frames: 3               # frames kept before and after the signing part
+    bdslw401_candidates: 12             # BdSLW401 clips checked per word when choosing its 3 trials
+    digit_min_score: 0.8                # MediaPipe Hands handedness score needed for a digit photo
+    digit_wrist: [-0.40, 0.15]          # where the digit hand is held (shoulder widths; x < 0 is the signer's right)
+    digit_move_frames: 10               # rest -> handshape and back, at 30 fps
+    digit_hold_s: 0.5
+    digit_change_frames: 8              # one digit to the next in a number like ১০
+  bdsl300:                              # BdSL-300 (Kaggle, CC BY-SA 4.0, built on SignBD-Word): scripts/43-45
+    kaggle_dataset: "hasibturjo/bdsl-300"
+    dir: "core_vocab/BdSL300"           # inside work_dir: folder_list.csv, overlap.csv, logs, quality reports
+    videos_dir: "core_vocab/BdSL300/videos"        # downloaded clips, <folder>/<file> as in the zip
+    keypoints_dir: "core_vocab/BdSL300/keypoints"  # raw/ (whole clip, NaN = missing) and trials/ (signing part)
+    preview_dir: "core_vocab_check/BdSL300"        # one skeleton mp4 per word + contact sheets
+    views: "close_first"                # SignBD-Word clips are filmed by a close (c) and a full-body (f) camera at once:
+                                        # both | close_first (c only, f where a signer has no c)
+    download_workers: 6
+    extract_workers: 6
+    min_good_clips: 8                   # words with fewer good clips are listed for a closer look
+    both_hands_frac: 0.5                # "both hands detected in most frames": both hands in more than this share
+    preview_fps: 30
+    sheet_words: 20                     # words per contact sheet
+  nonmanual:                            # head movement added at render time (figure and neon only); an approximation
+    question_signs: 2                   # a question: forward head tilt and raised eyebrows over the last 2 signs
+    tilt: 0.05                          # head moves down this much (shoulder widths) ...
+    nose_tilt: 0.025                    # ... and the nose a bit more, so it reads as a nod forward
+    negation_signs: 1                   # না / নেই / নয়: head shake over the last sign
+    shake_amplitude: 0.06               # face moves sideways this much (shoulder widths)
+    shake_hz: 2.5
+    ramp_s: 0.25                        # fade in and out
+  use_core_dictionary: true             # demos use work/sign_dictionary_core when it exists
+  studio3d:                             # 3D mannequin in the browser (scripts/21 --style studio3d)
+    web_dir: "signbangla/speech2sign/web3d"                       # viewer page
+    three_js: "signbangla/speech2sign/web3d/vendor/three.module.js"  # local three.js 0.160.0, no internet needed
+    host: "127.0.0.1"                   # local only
+    port: 8765
+    port_tries: 10                      # port busy: try the next ones (8766, 8767, ...)
+    open_browser: true                  # open the page once, with the first sentence
+    poll_ms: 500                        # the page checks for a new sentence this often
+    caption_font_size: 40
+    hand_clearance: 0.07                # a hand stays this far in front of the face (shoulder widths) ...
+    hand_clearance_frames: 8            # ... moved forward smoothly over this many frames each side
+    face:                               # drawn on the head surface at the real face points
+      eye_radius: 0.024                 # grey eye dots
+      show_nose_mouth: false            # true: also a short nose line and a mouth line along the head curve
+      nose_length: 0.12                 # nose line above the nose point, as a fraction of the head height
+      line_radius: 0.012                # thickness of the nose and mouth lines
+      line_segments: 8                  # pieces per line, so the mouth follows the curve of the head
+      surface_offset: 0.004             # lines sit this far out from the head surface
+    floor_y: -3.3                       # floor height (shoulder widths below the shoulders)
+    camera:
+      fov: 30                           # vertical field of view, degrees
+      distance: 9.6                     # in front of the target (shoulder widths)
+      height: 0.35                      # above the target
+      target: [0.0, -1.2, 0.25]         # point the camera looks at (x right, y up, z towards the camera)
+      min_half_width: 1.9               # narrow windows: the camera moves back so this much stays in view each side
+    colors:
+      background: "#eef1f5"
+      floor: "#e6eaf0"
+      limbs: "#374150"
+      joints: "#ffffff"
+      torso: "#dfe4ea"
+      head: "#e3e7ec"
+      face: "#7c8694"
+      right_hand: "#f58a28"
+      left_hand: "#2f80ed"
+      caption_background: "#f8f9fb"
+      caption_border: "#e1e5ea"
+      caption_text: "#9aa3af"           # signed words; words without a sign keep their category colour, unknown red
+      highlight_background: "#1f2937"
+      highlight_text: "#ffffff"
+    lift:                               # lift3d.py: 2D keypoints -> 3D, on a copy at display time
+      smooth_window: 21                 # Savitzky-Golay frames for the depth curves
+      smooth_order: 2
+      bone_percentile: 97               # full bone length = this percentile of its 2D length ...
+      bone_margin: 1.03                 # ... times this
+      sign_gain: 3.0                    # MediaPipe z difference -> towards / away from the camera
+      min_sign: 0.3
+      finger_depth_scale: 1.6
+      wrist_front_min: 0.12             # wrists stay this far in front of the body (shoulder widths)
+      hand_front_min: 0.05              # every hand point stays this far in front
+  gif:
+    fps: 30                             # GIFs use half the frames of the 60 fps mp4
+    width: 640
+  audio:
+    sample_rate: 16000                  # Whisper expects 16 kHz
+    device: null                        # null = the default microphone
+    min_seconds: 0.3                    # shorter or quieter recordings are not sent to Whisper, which invents text for them
+    min_rms: 0.01                       # loudest 30 ms of the recording, on a scale of 0 to 1
+  asr:
+    model: "bangla-speech-processing/BanglaASR"  # any Whisper model on Hugging Face, e.g. openai/whisper-small
+    language: "bn"
+    device: "auto"                      # auto | cuda | cpu
+    max_new_tokens: 64                  # a Bangla word costs about 11 tokens
+    generation_config_from: "openai/whisper-small"  # used for fine-tuned models whose own config is too old
+  matching:
+    fuzzy_cutoff: 0.8                   # fuzzy matches need at least this similarity (0 to 1)
+    min_fuzzy_chars: 4                  # shorter words must match exactly
+    fuzzy_margin: 0.02                  # two words this close to the best score count as unknown
+  demo:
+    window_height: 800                  # height of the OpenCV window in pixels
+    bar_height: 70                      # the recognized-text and unknown-word bars
+    bar_font_size: 36
