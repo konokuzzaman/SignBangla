@@ -31,6 +31,9 @@ kaggle.json
 .kaggle/
 .env
 
+# WandB local runs
+wandb/
+
 # OS specific
 .DS_Store
 Thumbs.db
