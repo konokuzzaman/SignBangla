@@ -1,0 +1,159 @@
+<!doctype html><html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:BN;src:url(/NotoSansBengali.ttf)}
+html,body{margin:0;width:720px;height:800px;overflow:hidden;font-family:BN,sans-serif}
+canvas{position:absolute;left:0;top:0}
+#cap{z-index:5;position:absolute;left:0;right:0;bottom:0;height:96px;display:flex;align-items:center;justify-content:center;gap:34px;font-size:40px}
+#cap span{padding:2px 18px 6px;border-radius:14px;transition:none}
+#tag{z-index:5;position:absolute;left:22px;top:18px;font:600 17px/1 Arial,sans-serif;letter-spacing:.06em}
+body.studio #cap{background:#f8f9fb;border-top:1px solid #e1e5ea;color:#9aa3af}
+body.studio #cap span.on{background:#1f2937;color:#fff}
+body.studio #tag{color:#6b7280}
+body.holo #cap{background:#060a16;border-top:1px solid #16213a;color:#3d4d6e}
+body.holo #cap span.on{background:#0b2a3a;color:#7ff3ff;box-shadow:0 0 18px #19d3ff66}
+body.holo #tag{color:#4d6590}
+</style>
+<script type="importmap">{"imports":{"three":"/three/build/three.module.js","three/addons/":"/three/examples/jsm/"}}</script>
+</head><body><div id="tag"></div><div id="cap"></div>
+<script type="module">
+import * as THREE from 'three';
+import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js';
+import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
+import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
+import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
+const STYLE=new URLSearchParams(location.search).get('style')||'studio';
+document.body.className=STYLE;
+const QS=new URLSearchParams(location.search);const D=await (await fetch('/'+(QS.get('seq')||'seq3d.json'))).json();const VIEW=QS.get('view')||'body';
+const W=720,H=704,HOLO=STYLE==='holo';
+document.getElementById('tag').style.display='none';
+const cap=document.getElementById('cap');D.words.forEach(w=>{const s=document.createElement('span');s.textContent=w[0];cap.appendChild(s)});
+const R=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});R.setSize(W,H);R.setPixelRatio(1.5);
+R.shadowMap.enabled=!HOLO;R.shadowMap.type=THREE.PCFSoftShadowMap;R.toneMapping=THREE.ACESFilmicToneMapping;R.toneMappingExposure=HOLO?1.0:1.05;
+document.body.appendChild(R.domElement);
+const S=new THREE.Scene();
+const OV=VIEW==='head'?{h:.6,cy:.5}:VIEW==='face'?{h:1.02,cy:.02}:{h:2.42,cy:-1.2};const FACE=QS.get('face')||'eyes';const ROBOT=FACE==='robot';
+const cam=HOLO?new THREE.PerspectiveCamera(30,W/H,0.1,60):new THREE.OrthographicCamera(-OV.h*W/H,OV.h*W/H,OV.h,-OV.h,0.1,60);
+const G=new THREE.Group();S.add(G);
+const FLOOR=HOLO?-2.35:-3.3;
+function mat(c,o={}){return new THREE.MeshStandardMaterial({color:c,roughness:.55,metalness:.05,...o})}
+let M;
+if(!HOLO){
+  S.background=new THREE.Color(0xeef1f5);S.fog=null;
+  S.add(new THREE.HemisphereLight(0xffffff,0xb9c2d0,1.5));
+  const dl=new THREE.DirectionalLight(0xffffff,2.2);dl.position.set(2.2,4.5,5);dl.castShadow=true;dl.shadow.mapSize.set(2048,2048);
+  Object.assign(dl.shadow.camera,{left:-3,right:3,top:3,bottom:-3,near:.5,far:14});dl.shadow.radius=7;dl.shadow.bias=-.0005;S.add(dl);
+  const fl=new THREE.Mesh(new THREE.CircleGeometry(7,64),new THREE.MeshStandardMaterial({color:0xe6eaf0,roughness:1}));fl.rotation.x=-Math.PI/2;fl.position.y=FLOOR;fl.receiveShadow=true;S.add(fl);
+  const wall=new THREE.Mesh(new THREE.PlaneGeometry(30,14),new THREE.MeshStandardMaterial({color:0xeef1f5,roughness:1}));wall.position.set(0,2,-7);wall.receiveShadow=true;S.add(wall);
+  M={bone:mat(0x374150),joint:mat(0xffffff,{roughness:.35}),torso:mat(0xdfe4ea),head:mat(0xe3e7ec),face:mat(0x7c8694),
+     R:mat(0xf58a28,{roughness:.45}),L:mat(0x2f80ed,{roughness:.45})};
+}else{
+  S.background=new THREE.Color(0x050814);S.fog=new THREE.Fog(0x050814,8,17);
+  S.add(new THREE.AmbientLight(0x4466aa,.6));
+  const gr=new THREE.GridHelper(16,32,0x1b5d86,0x10294a);gr.position.y=FLOOR;S.add(gr);
+  const ring=new THREE.Mesh(new THREE.RingGeometry(1.15,1.2,96),new THREE.MeshBasicMaterial({color:0x19d3ff,side:THREE.DoubleSide}));ring.rotation.x=-Math.PI/2;ring.position.y=FLOOR+.01;S.add(ring);
+  const e=(c,i=1.6)=>new THREE.MeshStandardMaterial({color:0x000000,emissive:c,emissiveIntensity:i});
+  M={bone:e(0x18b6e6,1.1),joint:e(0xbff6ff,1.5),torso:new THREE.MeshStandardMaterial({color:0,emissive:0x0f6c9a,emissiveIntensity:.8,transparent:true,opacity:.22,depthWrite:false}),
+     head:new THREE.MeshStandardMaterial({color:0,emissive:0x18b6e6,emissiveIntensity:.9,wireframe:true}),face:e(0xbff6ff,1.4),R:e(0xff8a2a,1.7),L:e(0x3f8cff,1.7)};
+}
+const sphG=new THREE.SphereGeometry(1,24,16),UP=new THREE.Vector3(0,1,0);
+const V=a=>new THREE.Vector3(a[0],a[1],a[2]);
+function bone(m,r0,r1){ // tapered capsule a(r0)->b(r1)
+  const g=new THREE.Group();const cyl=new THREE.Mesh(new THREE.CylinderGeometry(r1,r0,1,20,1,true),m);
+  const s0=new THREE.Mesh(sphG,m),s1=new THREE.Mesh(sphG,m);s0.scale.setScalar(r0);s1.scale.setScalar(r1);
+  [cyl,s0,s1].forEach(o=>{o.castShadow=true;g.add(o)});G.add(g);
+  return (a,b)=>{const d=b.clone().sub(a),L=d.length()||1e-4;cyl.position.copy(a).addScaledVector(d,.5);cyl.quaternion.setFromUnitVectors(UP,d.clone().divideScalar(L));cyl.scale.set(1,L,1);s0.position.copy(a);s1.position.copy(b)};
+}
+function ball(m,r){const s=new THREE.Mesh(sphG,m);s.scale.setScalar(r);s.castShadow=true;G.add(s);return s}
+const k=HOLO?.62:1.3;
+// body parts
+const B={shoulder:bone(M.bone,.05*k,.05*k),spine:bone(M.bone,.045*k,.045*k),hip:bone(M.bone,.05*k,.05*k),neck:bone(M.bone,.05*k,.045*k),
+ uaL:bone(M.bone,.062*k,.052*k),faL:bone(M.bone,.052*k,.04*k),uaR:bone(M.bone,.062*k,.052*k),faR:bone(M.bone,.052*k,.04*k)};
+const J={sL:ball(M.joint,.078*k),sR:ball(M.joint,.078*k),eL:ball(M.joint,.066*k),eR:ball(M.joint,.066*k),hpL:ball(M.joint,.06*k),hpR:ball(M.joint,.06*k)};
+const head=new THREE.Mesh(ROBOT?new THREE.BoxGeometry(2,2,2,1,1,1):new THREE.SphereGeometry(1,HOLO?14:40,HOLO?10:28),ROBOT?mat(0xcfd6de,{metalness:.55,roughness:.35}):M.head);head.castShadow=true;G.add(head);
+const eyeL=ball(M.face,.024),eyeR=ball(M.face,.024);const lipsHide=FACE!=='soft';
+M.lip=HOLO?M.face:mat(0xb4606a,{roughness:.5});M.nose=HOLO?M.face:mat(0xcfd5dc,{roughness:.6});
+const nose=new THREE.Mesh(new THREE.SphereGeometry(1,24,16),M.nose);nose.castShadow=true;G.add(nose);
+const noseTip=ball(M.nose,.03),lipU=bone(M.lip,.014,.014),lipU2=bone(M.lip,.014,.014),lipD=bone(M.lip,.016,.016),lipD2=bone(M.lip,.016,.016);
+const INK=new THREE.MeshStandardMaterial({color:0x111418,roughness:.6}),GLOW=new THREE.MeshStandardMaterial({color:0,emissive:0x35e0ff,emissiveIntensity:2.2}),DARK=mat(0x1b222c,{metalness:.4,roughness:.3});
+function mk(m){const cyl=new THREE.Mesh(new THREE.CylinderGeometry(1,1,1,14,1,true),m),a=new THREE.Mesh(sphG,m),b=new THREE.Mesh(sphG,m);[cyl,a,b].forEach(o=>G.add(o));
+  return (p,q,r)=>{const d=q.clone().sub(p),L=d.length()||1e-4;cyl.position.copy(p).addScaledVector(d,.5);cyl.quaternion.setFromUnitVectors(UP,d.clone().divideScalar(L));cyl.scale.set(r,L,r);a.position.copy(p);b.position.copy(q);a.scale.setScalar(r);b.scale.setScalar(r)}}
+const ST=[...Array(26)].map(()=>mk(FACE==='line'?M.face:ROBOT?DARK:INK)),DOT=[...Array(6)].map(()=>ball(FACE==='line'?M.face:ROBOT?GLOW:INK,.02));
+const visor=new THREE.Mesh(new THREE.BoxGeometry(1,1,1),DARK);if(ROBOT)G.add(visor);
+if(FACE!=='soft'){[nose,noseTip].forEach(o=>o.visible=false)}
+function headGeom(p){const earL=p[7],earR=p[8],eyeY=(p[2].y+p[5].y)/2,mY=(p[9].y+p[10].y)/2,sw=Math.abs(p[11].x-p[12].x);
+  let hw=Math.max(Math.abs(earL.x-earR.x)*1.05,sw*.42);const hh=Math.max(hw*1.3,(eyeY-mY)/.36);hw=Math.max(hw,hh/1.4);
+  return {c:new THREE.Vector3((earL.x+earR.x)/2,eyeY-hh*.05,.06),rx:hw/2,ry:hh/2,rz:hw/2*1.05,eyeY,mY}}
+function surfZ(g,x,y){if(ROBOT)return (Math.abs(x-g.c.x)<g.rx&&Math.abs(y-g.c.y)<g.ry)?g.c.z+g.rz:-99;const q=1-Math.pow((x-g.c.x)/g.rx,2)-Math.pow((y-g.c.y)/g.ry,2);return q>0?g.c.z+g.rz*Math.sqrt(q):-99}
+// keep each hand in front of the face surface (whole hand shifted forward, smoothed over time)
+if(!HOLO){for(const [a,b,wr] of [[25,46,15],[46,67,16]]){const n=D.frames.length,sh=new Float32Array(n);
+  D.frames.forEach((f,i)=>{const p=f.map(V),g=headGeom(p);let m=0;for(let j=a;j<b;j++){const z=surfZ(g,p[j].x,p[j].y)+.07-p[j].z;if(z>m)m=z}sh[i]=m});
+  const R1=8,dil=sh.map((_,i)=>{let m=0;for(let j=Math.max(0,i-R1);j<=Math.min(n-1,i+R1);j++)m=Math.max(m,sh[j]);return m});
+  const sm=dil.map((_,i)=>{let t=0,c=0;for(let j=Math.max(0,i-R1);j<=Math.min(n-1,i+R1);j++){t+=dil[j];c++}return t/c});
+  D.frames.forEach((f,i)=>{for(let j=a;j<b;j++)f[j][2]+=sm[i];f[wr][2]+=sm[i]})}}
+// torso: soft rounded slab between shoulders and hips
+const torso=new THREE.Mesh(new THREE.CylinderGeometry(1,.74,1,48,1),M.torso);torso.castShadow=!HOLO;G.add(torso);
+const LG=HOLO?null:{tL:bone(M.bone,.085*k,.068*k),sL:bone(M.bone,.068*k,.05*k),tR:bone(M.bone,.085*k,.068*k),sR:bone(M.bone,.068*k,.05*k),fL:bone(M.bone,.055*k,.05*k),fR:bone(M.bone,.055*k,.05*k),kL:ball(M.joint,.075*k),kR:ball(M.joint,.075*k),aL:ball(M.joint,.06*k),aR:ball(M.joint,.06*k)};
+function stand(h,hpL,hpR){if(!LG)return;for(const [s,hp,x] of [['L',hpL,.27],['R',hpR,-.27]]){const an=new THREE.Vector3(x,FLOOR+.09,-.02),kn=hp.clone().lerp(an,.5);kn.z=.05;
+  LG['t'+s](hp,kn);LG['s'+s](kn,an);LG['f'+s](an,new THREE.Vector3(x*1.15,FLOOR+.06,.26));LG['k'+s].position.copy(kn);LG['a'+s].position.copy(an)}}
+// hands
+const FING=[[1,2,3,4],[5,6,7,8],[9,10,11,12],[13,14,15,16],[17,18,19,20]],PALM=[[0,1],[0,5],[0,9],[0,13],[0,17],[5,9],[9,13],[13,17],[1,5],[0,7.5]];
+function hand(m){const hs=HOLO?.7:1;const f=FING.map((_,i)=>{const r=(i==0?.03:i==4?.021:.025)*hs;return [bone(m,r,r*.93),bone(m,r*.93,r*.85),bone(m,r*.85,r*.72)]});
+  const p=PALM.map(([a,b])=>bone(m,(b===7.5?.05:.034)*hs,(b===7.5?.058:.03)*hs));
+  return h=>{FING.forEach((F,i)=>{for(let j=0;j<3;j++)f[i][j](h[F[j]],h[F[j+1]])});
+    PALM.forEach(([a,b],i)=>{if(b===7.5){const c=h[5].clone().add(h[9]).add(h[13]).add(h[17]).multiplyScalar(.25);p[i](h[0].clone().lerp(c,.15),h[0].clone().lerp(c,.8))}else p[i](h[a],h[b])})}}
+const HL=hand(M.L),HR=hand(M.R);
+// trails (holo)
+const TR=[];if(HOLO){for(const [idx,c] of [[46+8,0xffb060],[46+4,0xff7a30]]){const n=34,pos=new Float32Array(n*3),col=new Float32Array(n*3);const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('color',new THREE.BufferAttribute(col,3));
+  const l=new THREE.Line(g,new THREE.LineBasicMaterial({vertexColors:true,transparent:true,blending:THREE.AdditiveBlending}));l.frustumCulled=false;G.add(l);TR.push({idx,c:new THREE.Color(c),n,g,pos,col})}}
+let comp=null;if(HOLO){comp=new EffectComposer(R);comp.addPass(new RenderPass(S,cam));comp.addPass(new UnrealBloomPass(new THREE.Vector2(W,H),.85,.55,.12));comp.addPass(new OutputPass())}
+const spans=[...cap.children];
+window.NF=D.frames.length;
+window.renderFrame=i=>{
+  const p=D.frames[i].map(V);const ls=p[11],rs=p[12],mid=ls.clone().add(rs).multiplyScalar(.5);
+  const hpL=p[23].clone().setZ(0).lerp(ls,.12),hpR=p[24].clone().setZ(0).lerp(rs,.12);hpL.x*=.8;hpR.x*=.8;const hmid=hpL.clone().add(hpR).multiplyScalar(.5);
+  B.shoulder(ls,rs);B.spine(mid,hmid);B.hip(hpL,hpR);
+  J.sL.position.copy(ls);J.sR.position.copy(rs);J.eL.position.copy(p[13]);J.eR.position.copy(p[14]);J.hpL.position.copy(hpL);J.hpR.position.copy(hpR);
+  B.uaL(ls,p[13]);B.faL(p[13],p[25]);B.uaR(rs,p[14]);B.faR(p[14],p[46]);
+  // head, eyes, nose and lips from the real face keypoints
+  const g=headGeom(p),hc=g.c,hw=g.rx*2,hh=g.ry*2,sw=Math.abs(ls.x-rs.x),eL=p[2],eR=p[5];
+  head.position.copy(hc);head.scale.set(g.rx,g.ry,g.rz);
+  eyeL.position.set(eL.x,g.eyeY,surfZ(g,eL.x,g.eyeY)-.004);eyeR.position.set(eR.x,g.eyeY,surfZ(g,eR.x,g.eyeY)-.004);
+  const nx=p[0].x,ny=p[0].y,mL=p[9],mR=p[10],mx=(mL.x+mR.x)/2,lw=Math.abs(mL.x-mR.x)*.5,mY=g.mY;
+  const Pt=(x,y,o=.003)=>new THREE.Vector3(x,y,surfZ(g,x,y)+o);let k=0;const line=(pts,r)=>{for(let j=0;j<pts.length-1;j++)ST[k++](pts[j],pts[j+1],r)};
+  const curve=(x0,x1,y,bend,n,r)=>{const pts=[];for(let j=0;j<=n;j++){const t=j/n,x=x0+(x1-x0)*t;pts.push(Pt(x,y+bend*(1-Math.pow(2*t-1,2))))}line(pts,r)};
+  if(FACE==='soft'){const nz=surfZ(g,nx,ny);nose.position.set(nx,ny+hh*.07,nz);nose.scale.set(hw*.085,hh*.13,hw*.11);nose.rotation.x=-.35;noseTip.position.set(nx,ny,nz+hw*.1);noseTip.scale.setScalar(hw*.085);
+    const A=Pt(mx-lw,mY,.004),Bq=Pt(mx+lw,mY,.004),Cu=Pt(mx,mY+hh*.022,.01),Cd=Pt(mx,mY-hh*.03,.01);lipU(A,Cu);lipU2(Cu,Bq);lipD(A,Cd);lipD2(Cd,Bq);DOT.forEach(d=>d.visible=false);for(;k<ST.length;k++)ST[k](new THREE.Vector3(0,-50,0),new THREE.Vector3(0,-50.01,0),.001)}
+  else{[eyeL,eyeR].forEach(o=>o.visible=false);const far=new THREE.Vector3(0,-50,0),far2=new THREE.Vector3(0,-50.01,0);[lipU,lipU2,lipD,lipD2].forEach(f=>f(far,far2));
+    DOT[0].position.copy(Pt(eL.x,g.eyeY));DOT[1].position.copy(Pt(eR.x,g.eyeY));DOT[0].scale.setScalar(hw*.06);DOT[1].scale.setScalar(hw*.06);
+    for(let j=2;j<6;j++)DOT[j].visible=false;
+    if(FACE==='paint'){ // thin brush lines
+      line([Pt(nx,ny+hh*.17),Pt(nx,ny+hh*.01),Pt(nx+hw*.075,ny-hh*.005)],hw*.02);curve(mx-lw*1.15,mx+lw*1.15,mY+hh*.012,-hh*.035,8,hw*.021)}
+    else if(FACE==='bold'){ // filled black nose and lips
+      const t=[Pt(nx,ny+hh*.13),Pt(nx-hw*.07,ny-hh*.01),Pt(nx+hw*.07,ny-hh*.01)];line([t[0],t[1],t[2],t[0]],hw*.026);line([Pt(nx,ny+hh*.07),Pt(nx,ny+hh*.01)],hw*.04);
+      curve(mx-lw*1.1,mx+lw*1.1,mY,hh*.02,6,hw*.03);curve(mx-lw*1.1,mx+lw*1.1,mY,-hh*.04,6,hw*.036);line([Pt(mx-lw*.8,mY-hh*.008),Pt(mx+lw*.8,mY-hh*.008)],hw*.035)}
+    else if(FACE==='dots'){ // nostril dots + straight mouth
+      for(const [j,dx] of [[2,-1],[3,1]]){DOT[j].visible=true;DOT[j].position.copy(Pt(nx+dx*hw*.05,ny-hh*.01));DOT[j].scale.setScalar(hw*.03)}
+      curve(mx-lw*1.1,mx+lw*1.1,mY,0,8,hw*.024)}
+    else if(FACE==='line'){ // light grey guides like the 2D figure
+      line([Pt(nx,ny+hh*.1),Pt(nx,ny-hh*.01)],hw*.02);curve(mx-lw,mx+lw,mY,0,8,hw*.02)}
+    else if(ROBOT){const fz=hc.z+g.rz;
+      visor.position.set(hc.x,g.eyeY,fz);visor.scale.set(hw*.86,hh*.2,.03);DOT[0].position.z=DOT[1].position.z=fz+.02;DOT[0].scale.setScalar(hw*.075);DOT[1].scale.setScalar(hw*.075);
+      const q=(x,y)=>new THREE.Vector3(x,y,fz+.012);
+      line([q(nx,ny+hh*.09),q(nx-hw*.055,ny-hh*.01),q(nx+hw*.055,ny-hh*.01),q(nx,ny+hh*.09)],hw*.022);
+      line([q(mx-lw*1.3,mY),q(mx+lw*1.3,mY)],hw*.02);for(let j=-2;j<=2;j++)line([q(mx+j*lw*.55,mY+hh*.04),q(mx+j*lw*.55,mY-hh*.04)],hw*.014);
+      const top=new THREE.Vector3(hc.x,hc.y+g.ry,hc.z);line([top,top.clone().add(new THREE.Vector3(0,hh*.2,0))],hw*.022);DOT[2].visible=true;DOT[2].position.copy(top).add(new THREE.Vector3(0,hh*.22,0));DOT[2].scale.setScalar(hw*.06);
+      for(const [j,sx] of [[3,-1],[4,1]]){DOT[j].visible=true;DOT[j].material=DARK;DOT[j].position.set(hc.x+sx*g.rx,hc.y,hc.z);DOT[j].scale.setScalar(hw*.1)}}
+    for(;k<ST.length;k++)ST[k](new THREE.Vector3(0,-50,0),new THREE.Vector3(0,-50.01,0),.001)}
+  B.neck(mid,new THREE.Vector3(hc.x,hc.y-hh/2+.05,.02));
+  torso.position.copy(mid).lerp(hmid,.5);torso.position.z=-.04;torso.scale.set(sw*.5,(mid.y-hmid.y)*1.0,sw*.2);stand(hmid,hpL,hpR);
+  HL(p.slice(25,46));HR(p.slice(46,67));
+  for(const t of TR){const a=t.pos;for(let j=0;j<t.n;j++){const q=D.frames[Math.max(0,i-j)][t.idx];a[j*3]=q[0];a[j*3+1]=q[1];a[j*3+2]=q[2];const f=Math.pow(1-j/t.n,2);t.col[j*3]=t.c.r*f;t.col[j*3+1]=t.c.g*f;t.col[j*3+2]=t.c.b*f}
+    t.g.attributes.position.needsUpdate=true;t.g.attributes.color.needsUpdate=true}
+  // camera: slow orbit so the depth is visible
+  if(HOLO){const T=i/(NF-1),yaw=0.5*Math.sin(T*Math.PI*2),r=6.7,tgt=new THREE.Vector3(0,-.5,.25);cam.position.set(tgt.x+Math.sin(yaw)*r,tgt.y+.55,tgt.z+Math.cos(yaw)*r);cam.lookAt(tgt)}
+  else{const th=7*Math.PI/180;cam.position.set(0,OV.cy+Math.sin(th)*12,Math.cos(th)*12);cam.lookAt(0,OV.cy,0)}
+  spans.forEach((s,j)=>s.classList.toggle('on',j===D.lab[i]));
+  if(comp)comp.render();else R.render(S,cam);
+};
+window.READY=true;
+</script></body></html>

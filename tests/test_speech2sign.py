@@ -20,7 +20,7 @@ from PIL import Image
 from signbangla.keypoints import GROUPS, N_KP
 from signbangla.speech2sign.dictionary import (SignDictionary, build_dictionary, group_present, is_upright, rank_trials,
                                                split_variants, trial_to_fps)
-from signbangla.speech2sign.render import CaptionDrawer, draw_skeleton, render_video, save_animation
+from signbangla.speech2sign.render import CaptionDrawer, draw_skeleton, render_frames, render_video, save_animation
 from signbangla.speech2sign.stitch import (EASINGS, fill_absent_hands, frame_captions, get_easing, stitch, stitch_words,
                                            transition, trim_idle)
 from signbangla.utils import ROOT, atomic_save_npy, atomic_write_json, load_config

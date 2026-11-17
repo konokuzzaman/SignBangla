@@ -20,6 +20,7 @@ SignBangla is a complete, modular, end-to-end framework for **Bengali Sign Langu
 - [Deep Learning Baseline Model](#deep-learning-baseline-model)
 - [Experimental Results & Evaluation](#experimental-results--evaluation)
 - [Live Real-Time Webcam Demo](#live-real-time-webcam-demo)
+- [Speech to Sign: 3D Studio Style](#speech-to-sign-3d-studio-style)
 - [Synthetic Self-Test Suite](#synthetic-self-test-suite)
 - [Phase 1 Progress Presentation Report](#phase-1-progress-presentation-report)
 - [Technical Design Decisions](#technical-design-decisions)
@@ -330,6 +331,30 @@ python scripts/11_live_webcam_demo.py --camera 0 --checkpoint work/results/bigru
 - **Bilingual Glassmorphic HUD**: Displays the top predicted sign in English and Bengali script (e.g., `Father / বাবা`), detection confidence percentage, and buffer fill level.
 - **Top-3 Prediction Probability Bars**: Visualizes candidate probabilities in real-time.
 - **FPS & Skeleton Toggle**: Press `s` to toggle keypoint skeleton overlay; press `q` to exit.
+
+---
+
+## Speech to Sign: 3D Studio Style
+
+Module 2 can show the signs as a 3D mannequin in the browser (`--style studio3d`), next to the 2D styles `figure`,
+`neon` and `skeleton` that play in an OpenCV window.
+
+```powershell
+python scripts_speech_to_sign_demo.py --text "বাবা ভাই" --style studio3d
+python scripts_speech_to_sign_demo.py --style studio3d          # microphone: each new sentence appears by itself
+```
+
+- A small local server (Python standard library, `127.0.0.1` only) serves the page and opens the browser once. If the
+  port is busy it tries the next ones and prints the address it used. Press Enter in the terminal to stop it.
+- The page plays in real time and has a Replay button (or press `r`). The caption bar highlights the current word;
+  words without a sign keep their category colour and unknown words are red.
+- Everything is local: three.js 0.160.0 is in `signbangla/speech2sign/web3d/vendor/` and the Bangla font comes from
+  `assets/fonts/`, so no internet connection is needed.
+- The 2D keypoints are lifted to 3D on a copy at display time (`signbangla/speech2sign/lift3d.py`): arm depth from how
+  short each bone looks, hands kept in front of the body. Keypoint files are not changed.
+- Saving MP4/GIF is not supported for this style yet; `--save` prints a message and the page still plays.
+- Settings (port, camera, colours, lifting): `speech2sign.studio3d` in `configs/config.yaml`. Tests:
+  `tests/test_studio3d.py`.
 
 ---
 
