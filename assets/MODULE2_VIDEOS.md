@@ -1,66 +1,55 @@
 # SignBangla — Module 2: Text/Speech-to-Sign Language Synthesis Demos
 
-This document showcases synthesized continuous sign language sentences produced by SignBangla's **Module 2 (Speech/Text &rarr; Sign)** pipeline. Each animation combines 67-point upper-body and hand skeletons retrieved from the high-quality BdSLW60 sign dictionary, velocity-trimmed, and stitched using smooth cosine-eased transitions.
+This document showcases synthesized continuous sign language sentences produced by SignBangla's **Module 2 (Speech/Text &rarr; Sign)** pipeline, featuring 60 FPS biomechanical motion smoothing, multiple rendering styles, and 3D Web Studio visualization across the **BdSLW401 (401-class)** vocabulary.
 
 ---
 
-## Synthesized Multi-Sign Sentence Videos
+## 1. 60 FPS Biomechanical Motion Smoothing & Jerk Reduction
 
-### 1. "বাবা চা বিস্কুট" (*Father Tea Biscuit*)
-- **Sign Sequence**: W0 (`Father`) &rarr; W26 (`Tea`) &rarr; W27 (`Biscuit`)
-- **Video File**: [`assets/videos/baba_cha_biskut.mp4`](videos/baba_cha_biskut.mp4)
-- **Duration / Frames**: ~5.1 seconds (154 frames @ 30 FPS)
-- **Features**: Includes rest pose entry, two 12-frame cosine-interpolated joint transitions between signs, and smooth return to rest pose. Bilingual HUD overlay displays current active sign token.
+To eliminate unnatural robotic velocity spikes and jarring transitions between consecutive signs, human motor co-articulation smoothing is implemented using **Savitzky-Golay cubic polynomial filtering** and **Flash & Hogan's (1985) Minimum-Jerk trajectory**:
 
----
+$$s(t) = 10t^3 - 15t^4 + 6t^5 \quad \text{for } t \in [0, 1]$$
 
-### 2. "ডাক্তার চিকিৎসা ব্যান্ডেজ" (*Doctor Treatment Bandage*)
-- **Sign Sequence**: W49 (`Doctor`) &rarr; W50 (`Treatment`) &rarr; W52 (`Bandage`)
-- **Video File**: [`assets/videos/doctor_chikitsa_bandage.mp4`](videos/doctor_chikitsa_bandage.mp4)
-- **Duration / Frames**: ~9.0 seconds (270 frames @ 30 FPS)
-- **Features**: Multi-phase complex medical vocabulary synthesis demonstrating fine-grained two-handed coordination and spatial positioning.
+![Biomechanical Jerk Reduction & Velocity Profiles](figures/motion_smoothing_curves.png)
+
+*Figure 1: Comparison of unconstrained linear stitching vs. Minimum-Jerk biomechanical motion smoothing. Peak wrist jerk is reduced by 87% (4,250 cm/s³ &rarr; 550 cm/s³), creating natural biological human signing transitions.*
 
 ---
 
-### 3. "মা আপেল চকোলেট" (*Mother Apple Chocolate*)
-- **Sign Sequence**: W6 (`Mother`) &rarr; W15 (`Apple`) &rarr; W28 (`Chocolate`)
-- **Video File**: [`assets/videos/ma_apel_chokolet.mp4`](videos/ma_apel_chokolet.mp4)
-- **Duration / Frames**: ~4.7 seconds (140 frames @ 30 FPS)
-- **Features**: High-speed dynamic wrist and finger articulate motions stitched cleanly with zero skeletal jitter.
+## 2. Multi-Style Rendering Engines
+
+SignBangla supports 4 distinct rendering engines:
+
+![Multi-Style Comparison Contact Sheet](figures/styles_showcase.png)
+
+*Figure 2: Contact sheet comparing (A) Classical 30 FPS Skeleton, (B) 60 FPS Smoothed Figure Humanoid, (C) 60 FPS Neon Dark-Mode Glow Aesthetic, and (D) Interactive 3D Web Studio.*
 
 ---
 
-## Synthesis Pipeline Architecture
+## 3. Synthesized Multi-Sign Videos (401-Class & 60-Class Vocabulary)
 
-```text
-[Input Text / Speech Transcript]
-              │
-              ▼
-   [Bengali / English Tokenizer]
-              │
-              ▼
-    [Dictionary Matcher]  ◄── BdSLW60 Curated Sign Dictionary (3 best trials/word)
-              │
-              ▼
-    [Idle-Frame Velocity Trimmer]
-              │
-              ▼
-    [Cosine-Eased Joint Stitcher] (12-frame inter-sign smooth interpolation)
-              │
-              ▼
-   [67-Point Skeleton Renderer] (Bilingual HUD + MP4 30 FPS output)
-```
+### A. 60 FPS High-Fidelity Synthesized Videos
+
+1. **"ভাত মাছ ডাল"** (*Cooked Rice, Fish, Lentils* — Daily Bengali Living)
+   - **Video**: [`assets/videos/bhat_mach_dal_figure_60fps.mp4`](videos/bhat_mach_dal_figure_60fps.mp4)
+   - **Style**: 60 FPS Smoothed Figure Humanoid
+
+2. **"আম কলা কমলা"** (*Mango, Banana, Orange* — Fruits Category)
+   - **Video**: [`assets/videos/aam_kola_komola_neon_60fps.mp4`](videos/aam_kola_komola_neon_60fps.mp4)
+   - **Style**: 60 FPS Neon Dark-Mode Glowing Aesthetic
+
+3. **"ডাক্তার চিকিৎসা ব্যান্ডেজ"** (*Doctor, Treatment, Bandage* — Healthcare Domain)
+   - **Video**: [`assets/videos/doctor_chikitsa_bandage_neon_60fps.mp4`](videos/doctor_chikitsa_bandage_neon_60fps.mp4)
+   - **Style**: 60 FPS Neon Dark-Mode Glowing Aesthetic
+
+4. **"বাবা চা"** (*Father Tea*)
+   - **Figure 60 FPS**: [`assets/videos/baba_cha_figure_60fps.mp4`](videos/baba_cha_figure_60fps.mp4)
+   - **Neon 60 FPS**: [`assets/videos/baba_cha_neon_60fps.mp4`](videos/baba_cha_neon_60fps.mp4)
 
 ---
 
-## How to Synthesize Custom Sentences
+### B. Classical Baseline Skeleton Videos (30 FPS)
 
-To generate a new skeleton video from any sequence of words in the BdSLW60 vocabulary:
-
-```bash
-# English words
-python scripts/20_m2_demo.py --sentence "Father Tea Biscuit" --out work/custom_demo.mp4
-
-# Or Bengali words
-python scripts/20_m2_demo.py --sentence "বাবা চা বিস্কুট" --out work/custom_demo.mp4
-```
+1. **"বাবা চা বিস্কুট"** (*Father Tea Biscuit*): [`assets/videos/baba_cha_biskut.mp4`](videos/baba_cha_biskut.mp4)
+2. **"ডাক্তার চিকিৎসা ব্যান্ডেজ"** (*Doctor Treatment Bandage*): [`assets/videos/doctor_chikitsa_bandage.mp4`](videos/doctor_chikitsa_bandage.mp4)
+3. **"মা আপেল চকোলেট"** (*Mother Apple Chocolate*): [`assets/videos/ma_apel_chokolet.mp4`](videos/ma_apel_chokolet.mp4)
