@@ -1,11 +1,15 @@
 """Join sign sequences into one: rest pose -> sign -> eased transition -> sign ... -> rest pose.
 
-The number of transition frames and the easing curve are plain parameters, so they can be compared in experiments.
+sentence_motion is what the demos use for every drawing style: hands filled from the rest pose, Savitzky-Golay
+smoothing, minimum-jerk transitions, a short hold after each sign, and 60 fps (settings: speech2sign.sentence).
+stitch / stitch_words are the older joining with idle trimming and adjustable easing (scripts/20_m2_demo.py).
 Everything here works on normalized sequences (T, 67, 3) where absent parts are exactly 0.
 """
 from dataclasses import dataclass
 
 import numpy as np
+from scipy.interpolate import CubicSpline
+from scipy.signal import savgol_filter
 
 from ..keypoints import GROUPS
 from .dictionary import HAND_WRIST, group_present
@@ -160,3 +164,85 @@ def frame_captions(stitched, full_text):
             current = seg["label"]
         caps += [full_text if seg["kind"] == "rest" else current] * (seg["end"] - seg["start"])
     return caps
+
+
+# ---------------------------------------------------------------- sentence motion (every drawing style)
+SENTENCE_KINDS = ("rest", "transition", "sign", "hold")
+
+
+def minimum_jerk(a, b, n):
+    """n frames from a to b, both included, with minimum-jerk easing (10s^3 - 15s^4 + 6s^5)."""
+    s = np.linspace(0, 1, n)
+    w = (10 * s ** 3 - 15 * s ** 4 + 6 * s ** 5)[:, None, None]
+    return a[None] * (1 - w) + b[None] * w
+
+
+@dataclass
+class Sentence:
+    """A whole sentence at the output frame rate, with what happens in every frame."""
+    seq: np.ndarray  # (T, 67, 3)
+    kinds: np.ndarray  # (T,) index into SENTENCE_KINDS
+    words: np.ndarray  # (T,) word being signed or moved to; -1 at rest and on the way back
+    labels: list
+    fps: float
+
+    def captions(self, layout=None):
+        """One caption per frame for render_frames: the sentence with the current word highlighted.
+
+        layout  None: the caption is the signed words. Or (tokens, colours, positions): the caption is all `tokens`,
+                including words without a sign, each with its own colour (None = usual); positions[k] is the token of
+                sign k."""
+        if layout is None:
+            return [(tuple(self.labels), int(k)) for k in self.words]
+        tokens, colors, positions = layout
+        return [(tuple(tokens), positions[k] if k >= 0 else -1, tuple(colors)) for k in self.words]
+
+    def retimed(self, speed):
+        """The same sentence played at `speed` (0.5 = half speed, twice the frames), with smooth in-between frames."""
+        if speed == 1.0 or len(self.seq) < 2:
+            return self
+        t = np.arange(len(self.seq))
+        new_t = np.arange(0, len(self.seq) - 1 + 1e-9, speed)
+        seq = CubicSpline(t, self.seq, axis=0)(new_t).astype(np.float32)
+        idx = np.clip(np.round(new_t).astype(int), 0, len(self.seq) - 1)
+        return Sentence(seq, self.kinds[idx], self.words[idx], self.labels, self.fps)
+
+
+def sentence_motion(words, dictionary, variant=0, savgol_window=7, savgol_order=2, transition_frames=16, hold_frames=8,
+                    rest_start_frames=10, rest_end_frames=12, upsample=2):
+    """Words -> Sentence, the same motion for every style. Each sign (variant `variant`) gets its missing hands from the
+    rest pose and Savitzky-Golay smoothing; the signs are joined rest -> transition -> sign -> hold -> transition ...
+    -> rest with minimum-jerk transitions; a cubic spline then raises the 30 fps dictionary to `upsample` x the rate."""
+    rest = np.asarray(dictionary.rest_pose, np.float32)
+    parts, kinds, word_ids = [], [], []
+
+    def add(frames, kind, word):
+        parts.append(np.asarray(frames, np.float32))
+        kinds.extend([SENTENCE_KINDS.index(kind)] * len(frames))
+        word_ids.extend([word] * len(frames))
+
+    add(np.repeat(rest[None], rest_start_frames, 0), "rest", -1)
+    prev = rest
+    for k, word in enumerate(words):
+        sig = np.array(dictionary.sequence(word, variant), np.float32)
+        for group in ("lh", "rh"):
+            sl = GROUPS[group]
+            missing = np.abs(sig[:, sl]).sum((1, 2)) == 0
+            sig[missing, sl] = rest[sl]
+        if len(sig) >= savgol_window:
+            sig = savgol_filter(sig, savgol_window, savgol_order, axis=0).astype(np.float32)
+        add(minimum_jerk(prev, sig[0], transition_frames)[1:], "transition", k)
+        add(sig, "sign", k)
+        add(np.repeat(sig[-1:], hold_frames, 0), "hold", k)
+        prev = sig[-1]
+    add(minimum_jerk(prev, rest, transition_frames)[1:], "transition", -1)
+    add(np.repeat(rest[None], rest_end_frames, 0), "rest", -1)
+    seq = np.concatenate(parts)
+    kinds, word_ids = np.array(kinds), np.array(word_ids)
+    if upsample > 1 and len(seq) > 1:
+        t = np.arange(len(seq))
+        fine = np.linspace(0, len(seq) - 1, len(seq) * upsample - (upsample - 1))
+        seq = CubicSpline(t, seq, axis=0)(fine).astype(np.float32)
+        idx = np.clip(np.round(fine).astype(int), 0, len(kinds) - 1)
+        kinds, word_ids = kinds[idx], word_ids[idx]
+    return Sentence(seq, kinds, word_ids, list(words), dictionary.fps * upsample)
