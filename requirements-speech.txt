@@ -1,0 +1,2 @@
+# Optional Module 1 dependency; base requirements remain unchanged.
+edge-tts>=7.3.1,<8
