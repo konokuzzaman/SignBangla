@@ -1,0 +1,65 @@
+@font-face { font-family: "Noto Sans Bengali"; src: url(/font.ttf) format("truetype"); }
+:root {
+  --bg: #f4f6f9; --panel: #ffffff; --line: #dde2ea; --text: #1d2430; --muted: #687385;
+  --accent: #1f6feb; --accent-soft: #e6efff; --red: #c62828; --red-soft: #fdecec; --green: #2e7d32;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--bg); color: var(--text); font-family: "Noto Sans Bengali", "Segoe UI", sans-serif;
+  display: flex; flex-direction: column; }
+button { font: inherit; cursor: pointer; border: 1px solid var(--line); background: var(--panel); color: var(--text);
+  border-radius: 8px; padding: 6px 14px; }
+button:hover { border-color: var(--accent); }
+button:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+.top { background: var(--panel); border-bottom: 1px solid var(--line); padding: 14px 24px 10px; }
+.sentence { font-size: 56px; line-height: 1.3; text-align: center; min-height: 74px; font-weight: 500; }
+.sentence.empty { color: var(--muted); font-size: 28px; padding-top: 18px; }
+.chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 8px 0 10px; min-height: 36px; }
+.chip { font-size: 20px; padding: 3px 12px; border-radius: 16px; background: var(--accent-soft); border: 1px solid #c6d8fb; }
+.chip.unknown { background: var(--red-soft); border-color: #f2b8b8; color: var(--red); }
+.chip.camera { border-style: dashed; }
+.chip.selected { outline: 2px solid var(--accent); }
+.controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.controls .spacer { flex: 1; }
+.toggle[aria-pressed="true"] { background: var(--accent); color: #fff; border-color: var(--accent); }
+.tabs button[aria-selected="true"] { background: var(--text); color: #fff; border-color: var(--text); }
+.message { min-height: 20px; color: var(--red); font-size: 14px; margin-top: 4px; text-align: center; }
+
+.main { flex: 1; min-height: 0; overflow: auto; padding: 12px 24px 24px; display: flex; flex-direction: column; gap: 12px; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; }
+.row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+#search { font: inherit; font-size: 16px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; width: 280px; }
+.examples { display: flex; gap: 6px; flex-wrap: wrap; }
+.examples button { font-size: 15px; background: #fff8e6; border-color: #f0dfb0; }
+.groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; max-height: 330px; overflow: auto; }
+.group h3 { margin: 4px 0 6px; font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.group .words { display: flex; flex-wrap: wrap; gap: 5px; }
+.word { font-size: 17px; padding: 3px 10px; position: relative; }
+.word .sign { color: var(--green); font-size: 10px; vertical-align: super; margin-left: 2px; }
+.legend { font-size: 13px; color: var(--muted); }
+
+.camera { display: flex; gap: 16px; flex-wrap: wrap; }
+.video-box { position: relative; background: #111; border-radius: 8px; overflow: hidden; width: 640px; max-width: 100%;
+  aspect-ratio: 4 / 3; }
+.video-box img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.indicator { position: absolute; top: 10px; left: 10px; padding: 4px 12px; border-radius: 14px; font-size: 15px;
+  color: #fff; background: var(--green); }
+.indicator.signing { background: var(--red); }
+.camera-side { flex: 1; min-width: 300px; }
+.camera-side h3 { font-size: 14px; color: var(--muted); margin: 12px 0 6px; }
+.camera-message { margin: 0 0 6px; font-weight: 600; }
+.note { font-size: 13px; color: var(--muted); margin: 0; }
+.top5 { display: flex; flex-direction: column; gap: 6px; }
+.top5 button { display: flex; justify-content: space-between; align-items: baseline; text-align: left; }
+.top5 button.current { background: var(--accent-soft); border-color: var(--accent); }
+.top5 .bn { font-size: 20px; }
+.top5 .en { font-size: 12px; color: var(--muted); display: block; }
+.top5 .score { font-size: 13px; color: var(--muted); }
+.hint { font-size: 13px; color: var(--muted); }
+
+.trace summary { cursor: pointer; font-weight: 600; }
+.trace ol { margin: 8px 0 0; padding-left: 22px; font-size: 15px; }
+.trace li { margin: 2px 0; }
+.unknown-list { color: var(--red); margin: 8px 0 0; }

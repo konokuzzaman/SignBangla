@@ -102,6 +102,25 @@ which is git-ignored.
 - Shared file changed: `configs/config.yaml` gets `speech2sign.bdsl300`. No existing keypoint file, BdSLW401 work or
   sign dictionary was changed.
 
+## Module 3: sentence builder (18 Nov)
+
+New package `signbangla/sign2text/` turns Module 1's sign words (dictionary forms, BdSL order) into a Bangla sentence
+with rules: `build_sentence(words, is_question=False)` and `build_from_candidates(top5_per_sign)`.
+
+- Scripts: `scripts/50_sentence_builder_eval.py` (50 test sentences -> `work/module3/eval/`) and
+  `scripts/51_sentence_demo.py --words "আমি পানি চাওয়া"` (`--speak` uses `signbangla/sign2speech/speech.py` from the
+  texttovoice branch once it is merged).
+- Data: `data/module3/` (lexicon, verbs, predicates, test sentences), all rows `verified = false`. **Please check
+  `verbs.csv` and `test_sentences.csv`** and set `verified` to `true` for rows that are right. `data/` is not in git,
+  so these files are written from `signbangla/sign2text/tables.py` when missing; corrections that should be shared
+  must also go into `tables.py`.
+- Shared file changed: `configs/config.yaml` gets a `module3` section. No Module 1 or Module 2 code changed.
+- On-screen demo (18 Nov): `python scripts\52_sentence_screen.py` (Words mode) or `--camera 0` (Camera mode with Module
+  1's 401-word BiGRU, `work/bdslw401/results/results/bigru/best_model.pt`; this branch's `signbangla/models.py` loads it
+  and gives the same predictions as the module-1 code, so no model code was copied). Sign segmentation thresholds are
+  in `module3.screen.segment`, tuned on 60 recorded BdSLW60 videos (sign count exact on 73%, within one on 90%). Speak
+  needs `signbangla/sign2speech` from the texttovoice branch.
+
 ## What you need to do
 
 - **Python 3.11 is required.** Install it before creating the environment. `mediapipe==0.10.14` does not install on Python 3.13 or newer. Follow "Setup for Teammates" in `README.md`.

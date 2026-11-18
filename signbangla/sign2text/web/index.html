@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SignBangla Sentence</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="top">
+  <div id="sentence" class="sentence" aria-live="polite"></div>
+  <div id="chips" class="chips" aria-label="Sign words in recognition order"></div>
+  <div class="controls">
+    <button id="speak" type="button">Speak</button>
+    <button id="undo" type="button">Undo last word</button>
+    <button id="clear" type="button">Clear</button>
+    <button id="question" type="button" class="toggle" aria-pressed="false">Question</button>
+    <span class="spacer"></span>
+    <div class="tabs" role="tablist">
+      <button id="tab-words" type="button" role="tab" aria-selected="true">Words</button>
+      <button id="tab-camera" type="button" role="tab" aria-selected="false">Camera</button>
+    </div>
+  </div>
+  <div id="message" class="message" role="status"></div>
+</header>
+
+<main class="main">
+  <section id="words-mode" class="panel">
+    <div class="row">
+      <input id="search" type="search" placeholder="Search a word (Bangla or English)" aria-label="Search words">
+      <div id="examples" class="examples"></div>
+    </div>
+    <div id="groups" class="groups"></div>
+  </section>
+
+  <section id="camera-mode" class="panel camera" hidden>
+    <div class="video-box">
+      <img id="video" alt="Camera picture with the detected skeleton">
+      <div id="indicator" class="indicator ready">ready</div>
+    </div>
+    <div class="camera-side">
+      <p id="camera-message" class="camera-message"></p>
+      <p id="camera-note" class="note"></p>
+      <h3>Top-5 for the selected sign</h3>
+      <div id="top5" class="top5"><span class="hint">Sign in front of the camera; the best word is added by itself.
+        Click another word here to replace it.</span></div>
+      <p id="camera-last" class="hint"></p>
+    </div>
+  </section>
+
+  <details id="trace-panel" class="panel trace">
+    <summary>How it was built</summary>
+    <ol id="trace"></ol>
+    <p id="unknown" class="unknown-list"></p>
+  </details>
+</main>
+<script src="/app.js"></script>
+</body>
+</html>

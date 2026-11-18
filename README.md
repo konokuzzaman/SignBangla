@@ -21,6 +21,7 @@ SignBangla is a complete, modular, end-to-end framework for **Bengali Sign Langu
 - [Experimental Results & Evaluation](#experimental-results--evaluation)
 - [Live Real-Time Webcam Demo](#live-real-time-webcam-demo)
 - [Speech to Sign: 3D Studio Style](#speech-to-sign-3d-studio-style)
+- [Module 3: Sign Words to a Bangla Sentence](#module-3-sign-words-to-a-bangla-sentence)
 - [Synthetic Self-Test Suite](#synthetic-self-test-suite)
 - [Phase 1 Progress Presentation Report](#phase-1-progress-presentation-report)
 - [Technical Design Decisions](#technical-design-decisions)
@@ -355,6 +356,46 @@ python scripts_speech_to_sign_demo.py --style studio3d          # microphone: e
 - Saving MP4/GIF is not supported for this style yet; `--save` prints a message and the page still plays.
 - Settings (port, camera, colours, lifting): `speech2sign.studio3d` in `configs/config.yaml`. Tests:
   `tests/test_studio3d.py`.
+
+## Module 3: Sign Words to a Bangla Sentence
+
+BdSL is signed mostly in subject-object-verb order without verb endings, case endings or small function words, so
+Module 1 gives one dictionary-form word per sign (`আমি পানি চাওয়া`). Module 3 (`signbangla/sign2text/`) turns that into a
+Bangla sentence (`আমি পানি চাই।`) with small rules, pure Python and offline:
+
+- subject and person (default 1st person), tense from time words (গতকাল, আগামীকাল, এখন), verb agreement from a verb
+  table with every form written out, locatives before যাওয়া / আসা / থাকা (স্কুলে, ডাক্তারের কাছে), possession
+  (আমার মাথা), sentences without a verb (আমার জ্বর হয়েছে, আমি ভালো আছি), negation (চাই না, যাইনি, ভালো নেই),
+  questions (question word before the verb, `?`) and fixed phrases. Each rule records what it changed.
+- API: `build_sentence(words, is_question=False) -> (sentence, trace, unknown_words)`, and
+  `build_from_candidates(candidates)` for Module 1's top-5 (top-1 for now; a language-model scorer can be added later).
+- Data in `data/module3/`: `lexicon.csv` (built from the project's word lists), `verbs.csv`, `predicates.csv`,
+  `test_sentences.csv`. Every row is `verified = false` until checked by a Bangla speaker. `data/` is not in git; the
+  files are written from `signbangla/sign2text/tables.py` when missing and are never overwritten.
+
+```powershell
+python scripts\51_sentence_demo.py --words "আমি পানি চাওয়া"
+python scripts\51_sentence_demo.py --words "তুমি কোথায় যাওয়া"
+python scripts\50_sentence_builder_eval.py        # 50 test sentences -> work/module3/eval/
+```
+
+Settings: `module3` in `configs/config.yaml`. Tests: `tests/test_sentence_builder.py`.
+
+**On-screen demo** (`scripts/52_sentence_screen.py`): a page in the browser on this computer (local server on
+127.0.0.1, standard library only) with the sentence in large text, the sign words as chips, Speak / Undo / Clear and a
+Question toggle, and a "How it was built" panel with the rule trace. Unknown words are shown in red, never guessed.
+
+```powershell
+python scripts\52_sentence_screen.py                # Words mode: click words or an example
+python scripts\52_sentence_screen.py --camera 0     # also Camera mode: webcam -> Module 1 (401 words) -> sentence
+```
+
+Camera mode runs MediaPipe Holistic with the dataset settings, cuts the stream into signs (a wrist above halfway
+between shoulders and hips starts a sign; hands lowered or still for 0.4 s end it), recognises each sign with the
+401-word BiGRU checkpoint and adds the top-1 word; the top-5 can be picked by hand. On recorded BdSLW60 videos of the
+held-out signers U4/U8 this chain recognised 79% of the automatically cut signs (top-5 94%); a live webcam is harder.
+Speak uses the Bangla speech output of the texttovoice branch (`signbangla/sign2speech`), when it is merged.
+Settings: `module3.screen`. Tests: `tests/test_sentence_screen.py`.
 
 ---
 

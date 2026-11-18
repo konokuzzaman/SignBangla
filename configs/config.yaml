@@ -236,3 +236,41 @@ speech2sign:                            # Module 2 (Speech -> Sign)
     window_height: 800                  # height of the OpenCV window in pixels
     bar_height: 70                      # the recognized-text and unknown-word bars
     bar_font_size: 36
+
+module3:                                # Sign -> text: rule-based sentence builder (signbangla/sign2text)
+  lexicon: "data/module3/lexicon.csv"   # written from the project's word lists when missing (scripts/50)
+  verbs: "data/module3/verbs.csv"       # every form written out; verified = false until checked by hand
+  predicates: "data/module3/predicates.csv"
+  test_sentences: "data/module3/test_sentences.csv"
+  eval_dir: "module3/eval"              # inside work_dir
+  past_tense: "past_perfect"            # tense for গতকাল etc.: past_perfect (গিয়েছিলাম) or past_simple (গেলাম)
+  past_words: ["গতকাল"]
+  future_words: ["আগামীকাল", "পরে"]
+  continuous_words: ["এখন"]
+  motion_verbs: ["যাওয়া", "আসা", "থাকা"]  # a place before these takes its locative form (স্কুলে, ডাক্তারের কাছে)
+  possessive_subject_words: ["নেই", "দরকার"]  # আমি টাকা নেই -> আমার টাকা নেই
+  yes_no_particle: false                # true: yes/no questions get কি after the subject (তুমি কি পানি চাও?)
+  speech_cache: "module3/speech_cache"  # inside work_dir: audio for scripts/51 --speak
+  screen:                               # scripts/52: the on-screen demo (signbangla/sign2text/app_server.py)
+    web_dir: "signbangla/sign2text/web"
+    host: "127.0.0.1"                   # local only
+    port: 8780
+    port_tries: 10                      # port busy: try the next ones
+    open_browser: true
+    poll_ms: 300                        # the page asks for new camera signs this often
+    checkpoint: "work/bdslw401/results/results/bigru/best_model.pt"  # Module 1's 401-word model (camera mode)
+    device: "auto"                      # auto | cuda | cpu
+    top_k: 5
+    video_width: 640                    # camera picture sent to the page
+    jpeg_quality: 75
+    mirror_display: true                # show the camera like a mirror (the keypoints are not mirrored)
+    examples: ["আমি পানি চাওয়া", "তুমি কোথায় যাওয়া", "গতকাল আমি ডাক্তার যাওয়া", "আমার মাথা ব্যথা", "আমি ভাত খাওয়া না"]
+    segment:                            # cutting the camera stream into signs (segmentation.py); tuned on 60 BdSLW60 videos
+      raise_frac: 0.5                   # a wrist above this point between shoulders (0) and hips (1) = signing
+      torso_ratio: 1.6                  # hips not visible: assumed this many shoulder widths below the shoulders
+      end_s: 0.4                        # a sign ends when the hands are lowered or still this long
+      min_s: 0.4                        # shorter movements are ignored
+      max_s: 4.0                        # a sign longer than this is cut
+      still_speed: 0.2                  # wrist speed (shoulder widths per second) below which the hands count as still
+      preroll_s: 0.2                    # frames kept from before the start
+      margin_s: 0.1                     # frames kept after the last movement
