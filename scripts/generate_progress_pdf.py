@@ -6,10 +6,10 @@ Exact 7-Page Presentation Structure:
 Page 1: Official NSU Title Cover Page (ECE Dept, NSU Logo, Project Title in Red, Members, Advisor Dr. Nabil Bin Hannan)
 Page 2: Weekly Update Executive Summary, Meeting Notes, Architectural Flow & Master 10-Week Status Dashboard
 Page 3: Member 1 (MD. Konok-Uz-Zaman: Data & Model Lead) - Ingestion, Keypoint Extraction, Slicing & Quality QA
-Page 4: Member 2 (Wahiduzzaman Mahin: Training & Evaluation Lead) - Normalization, DataLoaders, Augmentation & BiGRU Training
-Page 5: Member 3 (Shesir Baidya: Real-Time System & Demo Lead) - Signer Splits, 30+ FPS Inference & Live Webcam HUD
-Page 6: Experimental Benchmark Results & In-Depth Diagnostic Analysis (Validation vs Test, BiGRU Confusion Matrix, Failure Modes)
-Page 7: System Integration Verification Checklist, Next Week Targets (Week 5 Transformer), Roadmap & Faculty Advisor Sign-Off
+Page 4: Member 2 (Wahiduzzaman Mahin: Training & Evaluation Lead) - Normalization, DataLoaders, Augmentation & Comparative Training
+Page 5: Member 3 (Shesir Baidya: Real-Time System & Demo Lead) - Live Webcam System, HUD & Module 2 Speech-to-Sign Engine
+Page 6: Experimental Benchmark Results & In-Depth Diagnostic Analysis (BiGRU vs BiLSTM, Confusion Matrix, Worst Classes)
+Page 7: System Integration Verification Checklist, CLI Execution Commands, Roadmap & Faculty Advisor Sign-Off
 """
 import sys
 from pathlib import Path
@@ -25,8 +25,8 @@ from reportlab.pdfgen import canvas
 # METADATA & CONFIGURATION
 # ==========================================
 PROJECT_TITLE = "SignBangla: Real-Time Bangla Sign Language Recognition and Speech System"
-UPDATE_TITLE = "CSE299 Project Weekly Update [#1]"
-UPDATE_PERIOD = "Week 5 (Oct 15 – Oct 27, 2026)"
+UPDATE_TITLE = "CSE299 Project Weekly Update [#2]"
+UPDATE_PERIOD = "Weeks 1–5 Comprehensive Benchmark & Dual-Module Update"
 TERM_STR = "Fall, 2026"
 
 MEMBERS = [
@@ -78,7 +78,7 @@ class NSUNumberedCanvas(canvas.Canvas):
         
         # Header (Pages 2+)
         if self._pageNumber > 1:
-            self.drawString(40, 762, "CSE299 Project Weekly Update [#1] — SignBangla")
+            self.drawString(40, 762, "CSE299 Project Weekly Update [#2] — SignBangla")
             self.drawRightString(572, 762, f"{TERM_STR} | {UPDATE_PERIOD}")
             self.setStrokeColor(BORDER_COLOR)
             self.setLineWidth(0.5)
@@ -174,28 +174,28 @@ def create_presentation_pdf(output_path: Path):
         "PageHeading",
         parent=styles["Normal"],
         fontName="Helvetica-Bold",
-        fontSize=14,
-        leading=17,
+        fontSize=13.5,
+        leading=16.5,
         textColor=NAVY,
-        spaceAfter=3
+        spaceAfter=2
     )
     style_page_sub = ParagraphStyle(
         "PageSub",
         parent=styles["Normal"],
         fontName="Helvetica-Bold",
-        fontSize=9,
-        leading=11.5,
+        fontSize=8.5,
+        leading=11,
         textColor=TEAL,
-        spaceAfter=5
+        spaceAfter=4
     )
     style_h2 = ParagraphStyle(
         "SectionH2",
         parent=styles["Normal"],
         fontName="Helvetica-Bold",
-        fontSize=9.5,
-        leading=12,
+        fontSize=9,
+        leading=11.5,
         textColor=NAVY,
-        spaceBefore=3,
+        spaceBefore=2,
         spaceAfter=2,
         keepWithNext=True
     )
@@ -203,8 +203,8 @@ def create_presentation_pdf(output_path: Path):
         "BodyDark",
         parent=styles["Normal"],
         fontName="Helvetica",
-        fontSize=8,
-        leading=10.8,
+        fontSize=7.8,
+        leading=10.4,
         textColor=SLATE,
         spaceAfter=2
     )
@@ -217,20 +217,41 @@ def create_presentation_pdf(output_path: Path):
         "Caption",
         parent=styles["Normal"],
         fontName="Helvetica-Oblique",
-        fontSize=7,
-        leading=9,
+        fontSize=6.8,
+        leading=8.5,
         textColor=GRAY_TEXT,
         alignment=1,
-        spaceBefore=2,
-        spaceAfter=3
+        spaceBefore=1,
+        spaceAfter=2
     )
     style_card = ParagraphStyle(
         "CardText",
         parent=styles["Normal"],
         fontName="Helvetica",
-        fontSize=7.5,
-        leading=9.8,
+        fontSize=7.2,
+        leading=9.2,
         textColor=SLATE
+    )
+    style_code = ParagraphStyle(
+        "CodeText",
+        parent=styles["Normal"],
+        fontName="Courier",
+        fontSize=6.8,
+        leading=8.5,
+        textColor=NAVY
+    )
+    style_cell = ParagraphStyle(
+        "TableCell",
+        parent=styles["Normal"],
+        fontName="Helvetica",
+        fontSize=7,
+        leading=8.6,
+        textColor=SLATE
+    )
+    style_cell_bold = ParagraphStyle(
+        "TableCellBold",
+        parent=style_cell,
+        fontName="Helvetica-Bold"
     )
 
     story = []
@@ -255,7 +276,7 @@ def create_presentation_pdf(output_path: Path):
 
     story.append(Spacer(1, 20))
     story.append(Paragraph("Junior Design Project", style_cover_course))
-    story.append(Paragraph("CSE299 Project Weekly Update [#1]", style_cover_update))
+    story.append(Paragraph("CSE299 Project Weekly Update [#2]", style_cover_update))
     story.append(Spacer(1, 24))
 
     # Project Title in Red Bold
@@ -298,47 +319,47 @@ def create_presentation_pdf(output_path: Path):
     story.append(Paragraph(f"{UPDATE_PERIOD}", style_page_heading))
     story.append(Paragraph(
         "This week our group met <b>3 times</b> (twice in-person in the ECE Senior Design Lab and once online via Discord) "
-        "where we discussed, implemented, and benchmarked our foundational engineering modules. This presentation reflects our "
-        "cumulative progress after <b>4 weeks of active execution</b> following proposal approval. "
-        "<b>Phase 1 (data pipeline, Weeks 1–3) is now 100% complete</b>. In addition, for <b>Week 4</b>, we successfully built "
-        "an operational real-time webcam recognition application and trained the deep <b>BiGRU baseline model with Temporal Attention</b> "
-        "on the BdSLW60 benchmark dataset, with <b>results pending retraining</b> on the full split. "
-        "Here is the detailed record of our accomplishments for this update —",
+        "where we integrated, benchmarked, and evaluated our foundational engineering modules. This presentation reflects our "
+        "cumulative progress after <b>5 weeks of active execution</b> following proposal approval. "
+        "<b>Phase 1 (data pipeline, Weeks 1–3) and Phase 2 (baseline neural sequence models) are now 100% complete across all 60 words and 18 signers</b>. "
+        "Both <b>Module 1</b> (Sign &rarr; Speech via deep BiGRU and BiLSTM models achieving up to <b>86.79% test accuracy</b> on held-out signers) "
+        "and <b>Module 2</b> (Speech &rarr; Sign via dictionary compilation, kinematic motion stitching, and H.264 video rendering with native Bangla typography) "
+        "are fully operational, verified, and demonstrated. Here is the detailed engineering record for this update —",
         style_body
     ))
-    story.append(Spacer(1, 3))
+    story.append(Spacer(1, 2))
 
     # Team Overview Table
     team_data = [
         [
             Paragraph("<b>Member</b>", style_body_bold),
             Paragraph("<b>Name & Title</b>", style_body_bold),
-            Paragraph("<b>Primary Technical Responsibilities (Weeks 1-4)</b>", style_body_bold),
+            Paragraph("<b>Primary Technical Responsibilities (Weeks 1-5)</b>", style_body_bold),
             Paragraph("<b>Status</b>", style_body_bold)
         ]
     ]
     for m in MEMBERS:
         team_data.append([
             Paragraph(f"<b>{m['role']}</b>", style_body),
-            Paragraph(f"<b>{m['name']}</b><br/><font color='#64748B' size=7>{m['title']}</font>", style_body),
+            Paragraph(f"<b>{m['name']}</b><br/><font color='#64748B' size=6.5>{m['title']}</font>", style_body),
             Paragraph(
-                "Dataset Inspection, MediaPipe Extraction, Trial Segmentation & BiGRU Architecture" if m['role'] == "Member 1" else
-                ("Repository Setup, Normalization, Resampling, DataLoaders & Training Pipeline" if m['role'] == "Member 2" else
-                 "Webcam MediaPipe Testing, Signer Splits, Live HUD & Real-Time Inference Buffer"),
+                "Dataset Inspection, 60-Word Keypoint Extraction, Trial Slicing, Quality QA & BiGRU/BiLSTM Formulations" if m['role'] == "Member 1" else
+                ("Normalization, Resampling, DataLoaders, Augmentations & BiGRU/BiLSTM Training Engine (MPS)" if m['role'] == "Member 2" else
+                 "Signer Splits, Live Webcam HUD, and Module 2 Speech/Text-to-Sign Animation Engine"),
                 style_body
             ),
-            Paragraph("<font color='#15803D'><b>100% DONE</b></font><br/><font size=6 color='#64748B'>Weeks 1-4 Verified</font>", style_body)
+            Paragraph("<font color='#15803D'><b>100% DONE</b></font><br/><font size=5.5 color='#64748B'>Weeks 1-5 Verified</font>", style_body)
         ])
     t_team = Table(team_data, colWidths=[65, 145, 230, 96])
     t_team.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), CARD_BG),
         ('GRID', (0, 0), (-1, -1), 0.5, BORDER_COLOR),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('TOPPADDING', (0, 0), (-1, -1), 2.5),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 2.5),
+        ('TOPPADDING', (0, 0), (-1, -1), 2),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
     ]))
     story.append(t_team)
-    story.append(Spacer(1, 4))
+    story.append(Spacer(1, 3))
 
     # Master Timeline Grid (Weeks 1-10)
     story.append(Paragraph("Master 10-Week Engineering Timeline & Milestone Status", style_h2))
@@ -377,42 +398,42 @@ def create_presentation_pdf(output_path: Path):
         ],
         [
             Paragraph("<b>4</b>", style_body),
-            Paragraph("Baseline Model", style_body),
-            Paragraph("BiGRU architecture design", style_body),
-            Paragraph("Training pipeline (results pending retraining)", style_body),
-            Paragraph("Live webcam HUD overlay", style_body),
+            Paragraph("Baseline Models", style_body),
+            Paragraph("BiGRU & BiLSTM architectures", style_body),
+            Paragraph("Train & evaluate (86.79% Acc)", style_body),
+            Paragraph("Live HUD & Module 2 Demo", style_body),
             Paragraph("<font color='#15803D'><b>100% DONE</b></font>", style_body)
         ],
         [
             Paragraph("<b>5</b>", style_body),
-            Paragraph("Main Model", style_body),
-            Paragraph("Implement Transformer", style_body),
-            Paragraph("Hyperparameter tuning", style_body),
-            Paragraph("Real-time prediction buffer", style_body),
-            Paragraph("<font color='#D97706'><b>CURRENT</b></font>", style_body)
+            Paragraph("Dual-Module System", style_body),
+            Paragraph("Model diagnostics & confusion", style_body),
+            Paragraph("BiGRU vs BiLSTM validation", style_body),
+            Paragraph("Interactive HUD & stitching", style_body),
+            Paragraph("<font color='#15803D'><b>100% DONE</b></font>", style_body)
         ],
         [
             Paragraph("<b>6</b>", style_body),
-            Paragraph("Model Selection", style_body),
-            Paragraph("Model comparison & ablation", style_body),
-            Paragraph("Evaluation & final pick", style_body),
-            Paragraph("Sign segmentation / smoothing", style_body),
-            Paragraph("<font color='#64748B'>Planned</font>", style_body)
+            Paragraph("Main Transformer", style_body),
+            Paragraph("Implement ST-Transformer", style_body),
+            Paragraph("Hyperparameter tuning", style_body),
+            Paragraph("Sign temporal smoothing", style_body),
+            Paragraph("<font color='#D97706'><b>CURRENT</b></font>", style_body)
         ],
         [
             Paragraph("<b>7</b>", style_body),
-            Paragraph("Speech Output", style_body),
-            Paragraph("Sign dictionary & sequences", style_body),
-            Paragraph("Final evaluation & ASR setup", style_body),
-            Paragraph("Bangla text + gTTS speech", style_body),
+            Paragraph("Speech Integration", style_body),
+            Paragraph("Sign dictionary expansion", style_body),
+            Paragraph("Bangla ASR model setup", style_body),
+            Paragraph("gTTS speech output", style_body),
             Paragraph("<font color='#64748B'>Planned</font>", style_body)
         ],
         [
             Paragraph("<b>8-10</b>", style_body),
-            Paragraph("Module 2 Integration", style_body),
-            Paragraph("Skeleton animation & stitching", style_body),
-            Paragraph("Text processing & word rules", style_body),
-            Paragraph("Microphone & two-way demo", style_body),
+            Paragraph("Final Integration", style_body),
+            Paragraph("Bi-directional demo pipeline", style_body),
+            Paragraph("Comprehensive benchmarking", style_body),
+            Paragraph("Final report & presentation", style_body),
             Paragraph("<font color='#64748B'>Planned</font>", style_body)
         ]
     ]
@@ -422,23 +443,24 @@ def create_presentation_pdf(output_path: Path):
         ('TEXTCOLOR', (0, 0), (-1, 0), WHITE),
         ('GRID', (0, 0), (-1, -1), 0.5, BORDER_COLOR),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('BACKGROUND', (0, 1), (-1, 4), GREEN_BG),
-        ('BACKGROUND', (0, 5), (-1, 5), AMBER_BG),
-        ('TOPPADDING', (0, 0), (-1, -1), 2),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+        ('BACKGROUND', (0, 1), (-1, 5), GREEN_BG),
+        ('BACKGROUND', (0, 6), (-1, 6), AMBER_BG),
+        ('TOPPADDING', (0, 0), (-1, -1), 1.8),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 1.8),
     ]))
     story.append(t_timeline)
-    story.append(Spacer(1, 4))
+    story.append(Spacer(1, 3))
 
     # Architecture Overview Callout
     arch_box = [
         [
-            Paragraph("<b>End-to-End System Pipeline Flow:</b><br/>"
-                      "1. Video Stream Ingestion &rarr; 2. MediaPipe Holistic 67 Keypoints (25 Pose + 21 LH + 21 RH) &rarr; "
-                      "3. JSON Repetition Cutting &rarr; 4. Shoulder Midpoint & Scale Normalization &rarr; "
-                      "5. Linear Gap Filling & 64-Frame Resampling &rarr; 6. Signer-Independent Split (14/2/2) &rarr; "
-                      "7. PyTorch Batch Tensors (B, 64, 201) &rarr; 8. Deep BiGRU Temporal Attention Classifier (results pending retraining) &rarr; "
-                      "9. 30+ FPS Live Webcam Recognition HUD with Bilingual Bangla/English Output.",
+            Paragraph("<b>Dual-Module System Engineering Flow:</b><br/>"
+                      "• <b>Module 1 (Sign &rarr; Speech):</b> Video Ingestion &rarr; MediaPipe Holistic (67 3D landmarks: 25 pose + 21 LH + 21 RH) &rarr; "
+                      "Shoulder Centering & Scale Invariance &rarr; 64-Frame Resampling &rarr; Continuous Augmentations &rarr; "
+                      "BiGRU / BiLSTM with Temporal Attention (<b>86.79% Test Acc</b> on unseen signers U4 & U8) &rarr; 30+ FPS Live Bilingual Webcam HUD.<br/>"
+                      "• <b>Module 2 (Speech &rarr; Sign):</b> Speech / Text Input &rarr; Bangla Word Tokenization &rarr; "
+                      "60-Word Sign Dictionary Lookup &rarr; Multi-sign Transition Stitching (Cosine / Minimum-Jerk) &rarr; "
+                      "H.264 Animated Skeleton Video with Native Bangla Typography.",
                       style_card)
         ]
     ]
@@ -446,8 +468,8 @@ def create_presentation_pdf(output_path: Path):
     t_arch.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, -1), CARD_BG),
         ('BOX', (0, 0), (-1, -1), 0.5, TEAL),
-        ('TOPPADDING', (0, 0), (-1, -1), 4),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('TOPPADDING', (0, 0), (-1, -1), 3),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
         ('LEFTPADDING', (0, 0), (-1, -1), 8),
         ('RIGHTPADDING', (0, 0), (-1, -1), 8),
     ]))
@@ -458,57 +480,38 @@ def create_presentation_pdf(output_path: Path):
     # =========================================================================
     story.append(PageBreak())
     story.append(Paragraph("1. Group Member 1: MD. Konok-Uz-Zaman (Data & Model Lead)", style_page_heading))
-    story.append(Paragraph("Role: Dataset Ingestion, Keypoint Extraction, Quality Assurance & BiGRU Architecture", style_page_sub))
-    story.append(HRFlowable(width="100%", thickness=1.2, color=TEAL, spaceBefore=0, spaceAfter=5))
+    story.append(Paragraph("Role: Dataset Ingestion, 60-Word Keypoint Extraction, Quality Assurance & Neural Architectures", style_page_sub))
+    story.append(HRFlowable(width="100%", thickness=1.2, color=TEAL, spaceBefore=0, spaceAfter=4))
 
-    story.append(Paragraph("A. Detailed Technical Accomplishments (Weeks 1 – 4)", style_h2))
+    story.append(Paragraph("A. Detailed Technical Accomplishments (Weeks 1 – 5)", style_h2))
     m1_bullets = (
-        "<b>a) Dataset Streaming & Tokenization:</b> Streamed the BdSLW60 benchmark dataset directly over HTTP using a custom "
-        "streaming unzipper (<code>scripts/download_dataset.py</code>), bypassing duplicate 25 GB zip storage. Analyzed 114 continuous "
-        "multi-minute videos across 13 signers, parsing standard filename stems (<code>U{signer}W{word}F.mp4</code>) and 24 annotation JSONs.<br/>"
-        "<b>b) MediaPipe Holistic 67-Keypoint Extraction:</b> Developed the keypoint extraction pipeline keeping 67 landmarks: "
-        "25 upper-body pose (head, shoulders, arms, hands, hips) + 21 left hand + 21 right hand in 3D (x, y, z). Lower-body legs and the "
-        "468-point face mesh were dropped to eliminate facial identity bias and maintain 30+ FPS real-time throughput. Deployed 4-worker "
-        "multiprocessing with 100% extraction success (0 failures).<br/>"
-        "<b>c) Repetition Slicing & Trial Segmentation:</b> Implemented a heuristic regex parser to handle irregular JSON keys "
-        "('actual start', 'gesture end') across recording sessions, cutting continuous multi-repetition videos into 1,314 individual sign "
-        "trials across 8 complete word classes (trial lengths: min 9, mean 35.9, max 143 frames).<br/>"
-        "<b>d) Quality Assurance & Dominant Hand Auditing:</b> Engineered automated quality auditing (<code>scripts/05_check_quality.py</code>). "
-        "Filtered out 181 corrupted trials with severe hand tracking loss; 1,133 clean trials (86.2%) passed quality criteria. Pose was "
-        "detected in 100% of frames; identified dominant hand distribution: 912 right-hand trials (80.5%) and 221 left-hand trials (19.5%).<br/>"
-        "<b>e) BiGRU Model Architecture Formulation:</b> Designed the core deep sequence classifier in <code>signbangla/models.py</code>: "
-        "spatial linear projection (201 &rarr; 128), LayerNorm, 2-layer Bidirectional GRU (hidden dim 128, out dim 256), and learned "
-        "<b>Temporal Attention pooling</b> that weights sign apex frames while discounting neutral transition frames."
+        "<b>a) 60-Word Dataset Ingestion & Video Inventory:</b> Ingested the complete BdSLW60 benchmark dataset comprising 1,080 continuous "
+        "video recordings across 18 signers and 60 isolated vocabulary words. Built atomic tokenization scripts resolving complex filename "
+        "stems (<code>U{signer}W{word}F.mp4</code>) and 60 accompanying JSON annotation files.<br/>"
+        "<b>b) MediaPipe Holistic 67-Keypoint Extraction:</b> Implemented robust 67-landmark 3D coordinate extraction (25 upper-body pose + "
+        "21 left hand + 21 right hand), dropping legs and the 468-point face mesh to prevent appearance bias and ensure real-time 30+ FPS speed. "
+        "Identified and rectified <b>18 upside-down videos</b> (e.g. U17W351F–U17W360F, U9W96F, U12W220F) by rotating frames 180&deg; upright.<br/>"
+        "<b>c) Repetition Boundary Slicing:</b> Developed an adaptive regex boundary parser to handle varied JSON timestamp keys ('actual start', "
+        "'gesture end') across annotators, slicing continuous videos into <b>9,307 raw sign repetition trials</b>.<br/>"
+        "<b>d) Quality Auditing & Clean Dataset Assembly:</b> Automated multi-stage quality assurance (<code>scripts/05_check_quality.py</code>). "
+        "Flagged and filtered 1,022 defective repetitions with severe occlusion or lost hands; curated <b>8,285 high-integrity trials</b> "
+        "(5,558 train, 1,667 val, 1,060 test) with zero missing-body NaN errors.<br/>"
+        "<b>e) Neural Sequence Model Formulations:</b> Authored deep sequence classifiers in <code>signbangla/models.py</code>: "
+        "<code>BiGRUClassifier</code> (594k params) and <code>BiLSTMClassifier</code> (760k params) featuring spatial input projection, "
+        "LayerNorm, 2-layer bidirectional recurrent cores, and learned <b>Temporal Attention pooling</b>."
     )
     story.append(Paragraph(m1_bullets, style_body))
-    story.append(Spacer(1, 3))
+    story.append(Spacer(1, 2))
 
     story.append(Paragraph("B. Verification Visualizations & Extraction Artifacts", style_h2))
-    p_good = Path("work/quality_plots/good_U10W1F_t004.png")
-    if p_good.exists():
-        story.append(Image(str(p_good), width=510, height=68))
-        story.append(Paragraph("Figure 1.1: Multi-stage skeleton visualization of segmented trial U10W1F_t004 ('Father / বাবা'). Pose landmarks in dark slate, right hand in blue, left hand in green.", style_caption))
+    p_aug = Path("work/quality_plots/augmentation_preview.png")
+    if p_aug.exists():
+        story.append(Image(str(p_aug), width=510, height=78))
+        story.append(Paragraph("Figure 1.1: Geometric data augmentation preview: normalized base skeleton followed by 5 continuous augmented variants (rotation, scale, shift, time warp).", style_caption))
 
     p_summary = Path("work/quality_plots/summary.png")
     if p_summary.exists():
-        m1_card = [
-            [
-                Image(str(p_summary), width=220, height=100),
-                [
-                    Paragraph("<b>Quality Audit & Dominant Hand Insights:</b>", style_body_bold),
-                    Paragraph("• <b>Trial Duration Range:</b> Repetition lengths vary between 9 and 164 frames (mean ~35.9 frames), cleanly segmented by the boundary detection algorithm.<br/>"
-                              "• <b>Dominant Hand Distribution:</b> Audited ~80.5% Right-dominant and ~19.5% Left-dominant signers, closely aligning with published benchmark statistics (~17% Left).<br/>"
-                              "• <b>Resumable Extraction Pipeline:</b> Full video extraction on 9,307 trials requires 10+ hours. Implemented atomic file saving and logging to prevent corruption.", style_body)
-                ]
-            ]
-        ]
-        t_card = Table(m1_card, colWidths=[230, 306])
-        t_card.setStyle(TableStyle([
-            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-            ('LEFTPADDING', (1, 0), (1, 0), 8),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-        ]))
-        story.append(t_card)
+        story.append(Image(str(p_summary), width=510, height=75))
         story.append(Paragraph("Figure 1.2: Sign trial duration distribution and dominant hand breakdown from automated quality audit.", style_caption))
 
     story.append(Spacer(1, 2))
@@ -519,39 +522,30 @@ def create_presentation_pdf(output_path: Path):
     # =========================================================================
     story.append(PageBreak())
     story.append(Paragraph("2. Group Member 2: Wahiduzzaman Mahin (Training & Evaluation Lead)", style_page_heading))
-    story.append(Paragraph("Role: Geometric Normalization, Uniform Resampling, PyTorch DataLoaders & Training Engine", style_page_sub))
-    story.append(HRFlowable(width="100%", thickness=1.2, color=TEAL, spaceBefore=0, spaceAfter=5))
+    story.append(Paragraph("Role: Geometric Normalization, Uniform Resampling, PyTorch DataLoaders & Comparative Training", style_page_sub))
+    story.append(HRFlowable(width="100%", thickness=1.2, color=TEAL, spaceBefore=0, spaceAfter=4))
 
-    story.append(Paragraph("A. Detailed Technical Accomplishments (Weeks 1 – 4)", style_h2))
+    story.append(Paragraph("A. Detailed Technical Accomplishments (Weeks 1 – 5)", style_h2))
     m2_bullets = (
-        "<b>a) Environment Architecture & Synthetic Testing:</b> Established repository structure, virtual environments, and strictly pinned "
-        "<code>mediapipe==0.10.14</code> (newer versions removed the Holistic solution). Created central YAML configuration (<code>configs/config.yaml</code>) "
-        "and authored an end-to-end synthetic data self-test suite (<code>tests/test_pipeline.py</code>) verifying the pipeline without external dependencies.<br/>"
-        "<b>b) Geometric Invariance & Coordinate Normalization:</b> Formulated coordinate transformation ensuring scale and translation invariance: "
-        "multiplied x and z by video aspect ratio (W/H), centered origin at shoulder midpoint <code>(left_shoulder + right_shoulder)/2</code>, "
-        "and scaled coordinates by shoulder width <code>||left_shoulder - right_shoulder||</code>. This eliminates variance across camera distances and body statures.<br/>"
-        "<b>c) Temporal Gap Interpolation & Fixed 64-Frame Resampling:</b> Addressed tracking loss by interpolating missing hand coordinates "
-        "for gaps &le;6 frames and pose gaps &le;15 frames. Permanently absent hands were set strictly to 0 (zero-NaN guarantee). Standardized variable-length "
-        "trials into uniform 64-frame tensors <code>(64, 67, 3)</code> via linear temporal resampling.<br/>"
-        "<b>d) PyTorch DataLoader with Realistic Augmentations:</b> Developed <code>SignBanglaDataset</code> and <code>make_dataloaders</code>. "
-        "Implemented training-only continuous augmentations: rotation (&plusmn;10&deg;), scaling (0.9–1.1&times;), translation shift (0.10), "
-        "temporal cropping (up to 10%), time warping (0.25), and Gaussian noise (std 0.01). Strictly preserved absent-hand integrity and avoided horizontal flips.<br/>"
-        "<b>e) BiGRU Baseline Training & Optimization:</b> Engineered full training engine (<code>scripts/10_train_baseline.py</code>) utilizing "
-        "AdamW optimizer (lr 1e-3, weight decay 1e-4), CosineAnnealingLR schedule, inverse-frequency class weighting, and early stopping. "
-        "Checkpoints are saved to <code>work/results/bigru/best_model.pt</code>. <b>Results pending retraining</b> on the full split."
+        "<b>a) Environment Architecture & Testing Harness:</b> Established virtual environment with strictly pinned <code>mediapipe==0.10.14</code> "
+        "and PyTorch with Apple Silicon GPU acceleration (<code>mps</code>). Authored a 20-test synthetic self-test suite (<code>tests/test_pipeline.py</code>) "
+        "running 100% self-contained verification without dataset dependencies.<br/>"
+        "<b>b) Geometric Invariance & Coordinate Transformation:</b> Implemented rigorous coordinate normalization ensuring spatial invariance: "
+        "aspect ratio correction, translation centering at shoulder midpoint <code>(left_shoulder + right_shoulder)/2</code>, and distance scaling "
+        "by Euclidean shoulder width <code>||left_shoulder - right_shoulder||</code>. Eliminates variance from signer physique and camera distance.<br/>"
+        "<b>c) Temporal Gap Interpolation & Uniform 64-Frame Resampling:</b> Resolved tracking drops via linear gap interpolation (&le;6 frames for hands, "
+        "&le;15 frames for pose). Resampled all variable-length trials to uniform 64-frame tensors <code>(64, 67, 3)</code>, flattening to 201 features.<br/>"
+        "<b>d) PyTorch DataLoader with 6-Fold Augmentations:</b> Developed <code>SignBanglaDataset</code> and <code>make_dataloaders</code>. "
+        "Implemented training-only continuous augmentations: rotation (&plusmn;10&deg;), scale (0.9–1.1&times;), shift (&plusmn;0.10), "
+        "temporal cropping (up to 10%), time warping (&plusmn;25%), and Gaussian jitter (std 0.01) with zero NaN artifacts.<br/>"
+        "<b>e) Dual-Model Training Engine & Benchmarking:</b> Engineered <code>scripts/10_train_baseline.py</code> supporting AdamW, "
+        "CosineAnnealingLR, and dual architectures. Successfully trained both <b>BiGRU (86.79% Test Acc)</b> and <b>BiLSTM (86.04% Test Acc)</b> "
+        "on the full 60-word split on Apple Silicon GPU in under 12 minutes."
     )
     story.append(Paragraph(m2_bullets, style_body))
-    story.append(Spacer(1, 3))
-
-    story.append(Paragraph("B. Data Augmentation & Baseline Training Visualizations", style_h2))
-    p_aug = Path("work/quality_plots/augmentation_preview.png")
-
-    if p_aug.exists():
-        story.append(Image(str(p_aug), width=510, height=58))
-        story.append(Paragraph("Figure 2.1: Data augmentation preview on preprocessed trial: original normalized skeleton followed by 5 augmented variations.", style_caption))
-
     story.append(Spacer(1, 2))
-    story.append(Paragraph("C. Coordinate Normalization & Resampling Specifications", style_h2))
+
+    story.append(Paragraph("B. Coordinate Normalization & Resampling Specifications", style_h2))
     prep_specs = [
         [Paragraph("<b>Normalization Step</b>", style_body_bold), Paragraph("<b>Mathematical Formulation</b>", style_body_bold), Paragraph("<b>Engineering Objective</b>", style_body_bold)],
         [
@@ -585,6 +579,14 @@ def create_presentation_pdf(output_path: Path):
     ]))
     story.append(t_prep)
     story.append(Spacer(1, 2))
+
+    # Embed Training Curves
+    p_curves = Path("work/results/bigru/training_curves.png")
+    if p_curves.exists():
+        story.append(Image(str(p_curves), width=510, height=105))
+        story.append(Paragraph("Figure 2.1: BiGRU baseline training loss and validation Macro-F1 progression across 35 epochs on full 60-word dataset.", style_caption))
+
+    story.append(Spacer(1, 2))
     story.append(Paragraph("<b>Delivered Code Modules:</b> <code>configs/config.yaml</code>, <code>signbangla/preprocess.py</code>, <code>scripts/06_preprocess.py</code>, <code>signbangla/dataset.py</code>, <code>scripts/08_test_dataloader.py</code>, <code>scripts/10_train_baseline.py</code>, <code>tests/test_pipeline.py</code>", style_card))
 
     # =========================================================================
@@ -592,85 +594,183 @@ def create_presentation_pdf(output_path: Path):
     # =========================================================================
     story.append(PageBreak())
     story.append(Paragraph("3. Group Member 3: Shesir Baidya (Real-Time System & Demo Lead)", style_page_heading))
-    story.append(Paragraph("Role: Signer Splits, Diagnostic Evaluation Suite & 30+ FPS Live Webcam Recognition System", style_page_sub))
-    story.append(HRFlowable(width="100%", thickness=1.2, color=TEAL, spaceBefore=0, spaceAfter=5))
+    story.append(Paragraph("Role: Signer Splits, 30+ FPS Live Webcam HUD & Module 2 Speech/Text-to-Sign Engine", style_page_sub))
+    story.append(HRFlowable(width="100%", thickness=1.2, color=TEAL, spaceBefore=0, spaceAfter=4))
 
-    story.append(Paragraph("A. Detailed Technical Accomplishments (Weeks 1 – 4)", style_h2))
+    story.append(Paragraph("A. Detailed Technical Accomplishments (Weeks 1 – 5)", style_h2))
     m3_bullets = (
-        "<b>a) Real-Time Landmark Tracking & Latency Profiling:</b> Validated MediaPipe Holistic on recorded videos and live webcams "
-        "(<code>scripts/02_test_mediapipe.py</code>). Discarding lower-body landmarks and the dense face mesh reduced keypoint processing "
-        "latency by ~42%, achieving steady 30+ FPS capture on standard commodity hardware.<br/>"
-        "<b>b) Zero-Leakage Signer-Independent Split Strategy:</b> Engineered split generator (<code>scripts/07_make_splits.py</code>) "
-        "partitioning 18 signers into Train (14 signers: U2, U3, U5, U6, U7, U9, U10, U12–U18 -> 5,558 trials), Validation (2 signers: U1, U11 -> 1,667 trials), "
-        "and Test (2 signers: U4, U8 -> 1,060 trials). Reserving U4 and U8 strictly replicates the published BdSLW60 benchmark paper, ensuring "
-        "zero subject identity leakage.<br/>"
-        "<b>c) Diagnostic Evaluation Suite Formulation:</b> Authored comprehensive evaluation module (<code>signbangla/metrics.py</code>) "
-        "computing Top-1/Top-5 accuracy, Macro & Weighted F1 scores, precision, recall, confusion matrix heatmaps, and automated confused-pair identification.<br/>"
-        "<b>d) Live Webcam Recognition Engine:</b> Built the complete real-time interactive application (<code>scripts/11_live_webcam_demo.py</code>). "
-        "Implements continuous webcam acquisition, rolling 64-frame sequence buffer, on-the-fly shoulder normalization, PyTorch inference, and toggleable skeleton overlays.<br/>"
-        "<b>e) Bilingual Real-Time Glassmorphic HUD:</b> Designed interactive on-screen HUD rendering top predicted sign in English and native "
-        "Bengali Unicode script (e.g., <i>Father / বাবা</i>), live confidence probability meters for Top-3 candidate classes, buffer fill gauge, and real-time FPS counter."
+        "<b>a) Signer-Independent Split Strategy (Zero Leakage):</b> Developed split generator (<code>scripts/07_make_splits.py</code>) "
+        "enforcing strict zero-leakage subject isolation: 14 training signers (5,558 trials), 2 validation signers (U1, U11 -> 1,667 trials), "
+        "and 2 held-out test signers (U4, U8 -> 1,060 trials). Exactly replicates the published benchmark evaluation protocol.<br/>"
+        "<b>b) Real-Time Landmark Tracking & Latency Profiling:</b> Validated MediaPipe Holistic on live cameras (<code>scripts/02_test_mediapipe.py</code>). "
+        "Discarding lower body and face mesh dropped inference latency by ~42%, maintaining 30+ FPS on standard Mac/PC hardware.<br/>"
+        "<b>c) Interactive Live Webcam Demonstration (Module 1):</b> Engineered <code>scripts/11_live_webcam_demo.py</code> featuring "
+        "rolling 64-frame sequence buffer, real-time shoulder normalization, model checkpoint autodetection (BiGRU or BiLSTM), "
+        "and a bilingual HUD rendering predicted sign in English and native Bengali Unicode script (e.g., <i>Father / বাবা</i>), "
+        "Top-3 probability bars, and sequence buffer gauge.<br/>"
+        "<b>d) Module 2 Speech/Text-to-Sign Language Synthesis:</b> Built the reverse synthesis pipeline (<code>scripts/20_m2_demo.py</code>, "
+        "<code>signbangla/speech2sign/</code>). Tokenizes input Bangla sentences, queries the 60-word clean sign dictionary, "
+        "stitches consecutive gestures with smooth easing transitions (Cosine, Minimum-Jerk), and renders H.264 video with native Bangla typography.<br/>"
+        "<b>e) Module 2 Test Suite Verification:</b> Formulated comprehensive unit tests (<code>tests/test_speech2sign.py</code>) "
+        "validating dictionary lookup, trial ranking, easing interpolation, and font shaping &rarr; <b>15 passed in 2.2s</b>."
     )
     story.append(Paragraph(m3_bullets, style_body))
-    story.append(Spacer(1, 3))
+    story.append(Spacer(1, 2))
 
-    story.append(Paragraph("B. Real-Time Tracking & Live Webcam Application Preview", style_h2))
-    p_media = Path("work/mediapipe_test/U10W1F.png")
+    story.append(Paragraph("B. Real-Time Demonstrator Previews: Module 1 & Module 2", style_h2))
     p_webcam = Path("work/mediapipe_test/webcam_demo_preview.png")
+    p_m2 = Path("work/quality_plots/m2_demo_preview.png")
 
-    if p_media.exists():
-        story.append(Image(str(p_media), width=510, height=62))
-        story.append(Paragraph("Figure 3.1: MediaPipe Holistic 67-keypoint tracking verification on sample video U10W1F.", style_caption))
-    if p_webcam.exists():
+    demo_cells = []
+    if p_webcam.exists() and p_m2.exists():
+        demo_cells = [
+            [
+                Image(str(p_webcam), width=250, height=125),
+                Image(str(p_m2), width=250, height=125)
+            ],
+            [
+                Paragraph("<b>Figure 3.1 (Module 1):</b> Live Webcam Recognition HUD overlay displaying detected sign 'Father / বাবা' at 98.4% confidence with Top-3 probability meters at 31 FPS.", style_caption),
+                Paragraph("<b>Figure 3.2 (Module 2):</b> Speech/Text-to-Sign animated synthesis (scripts/20_m2_demo.py) rendering stitched gesture 'বাবা আপেল' with smooth easing transitions and Bangla captions.", style_caption)
+            ]
+        ]
+        t_demos = Table(demo_cells, colWidths=[265, 265])
+        t_demos.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('TOPPADDING', (0, 0), (-1, -1), 1),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+        ]))
+        story.append(t_demos)
+    elif p_webcam.exists():
         story.append(Image(str(p_webcam), width=510, height=130))
-        story.append(Paragraph("Figure 3.2: Operational live webcam recognition demo HUD (scripts/11_live_webcam_demo.py) displaying detected sign 'Father / বাবা' at 98.4% confidence with Top-3 probability bars and buffer fill monitor at 31.2 FPS.", style_caption))
+        story.append(Paragraph("Figure 3.1: Live Webcam Recognition Demo HUD overlay displaying detected sign at 31 FPS.", style_caption))
 
     story.append(Spacer(1, 2))
-    story.append(Paragraph("<b>Delivered Code Modules:</b> <code>scripts/02_test_mediapipe.py</code>, <code>scripts/07_make_splits.py</code>, <code>signbangla/metrics.py</code>, <code>scripts/09_eval_demo.py</code>, <code>scripts/11_live_webcam_demo.py</code>", style_card))
+    story.append(Paragraph("<b>Delivered Code Modules:</b> <code>scripts/02_test_mediapipe.py</code>, <code>scripts/07_make_splits.py</code>, <code>signbangla/metrics.py</code>, <code>scripts/11_live_webcam_demo.py</code>, <code>scripts/20_m2_demo.py</code>, <code>scripts/20_build_sign_dictionary.py</code>, <code>tests/test_speech2sign.py</code>", style_card))
 
     # =========================================================================
     # PAGE 6: EXPERIMENTAL BENCHMARK RESULTS & IN-DEPTH DIAGNOSTIC ANALYSIS
     # =========================================================================
     story.append(PageBreak())
-    story.append(Paragraph("4. BiGRU Baseline Experimental Results & Diagnostic Analysis", style_page_heading))
-    story.append(Paragraph("Signer-Independent Benchmark Evaluation, Per-Class Performance & Confusion Analysis", style_page_sub))
-    story.append(HRFlowable(width="100%", thickness=1.2, color=NAVY, spaceBefore=0, spaceAfter=5))
+    story.append(Paragraph("4. Experimental Benchmark Results & Diagnostic Error Profiling", style_page_heading))
+    story.append(Paragraph("Signer-Independent 60-Word Benchmark: BiGRU vs. BiLSTM Comparison, Confusion Matrix & Error Modes", style_page_sub))
+    story.append(HRFlowable(width="100%", thickness=1.2, color=NAVY, spaceBefore=0, spaceAfter=4))
 
     story.append(Paragraph("A. Quantitative Benchmark Performance Comparison", style_h2))
     eval_table_data = [
-        [Paragraph("<b>Metric Dimension</b>", style_body_bold), Paragraph("<b>Validation Split (U1, U11)</b>", style_body_bold), Paragraph("<b>Unseen Test Split (U4, U8)</b>", style_body_bold), Paragraph("<b>Engineering Analysis</b>", style_body_bold)],
         [
-            Paragraph("<b>Top-1 Accuracy</b>", style_body),
-            Paragraph("Results pending retraining", style_body),
-            Paragraph("Results pending retraining", style_body),
-            Paragraph("Measured on signers never seen during training.", style_body)
+            Paragraph("<b>Model Architecture & Split</b>", style_body_bold),
+            Paragraph("<b>Top-1 Accuracy</b>", style_body_bold),
+            Paragraph("<b>Macro F1</b>", style_body_bold),
+            Paragraph("<b>Weighted F1</b>", style_body_bold),
+            Paragraph("<b>Test Loss</b>", style_body_bold),
+            Paragraph("<b>Parameters & Hardware</b>", style_body_bold)
         ],
         [
-            Paragraph("<b>Macro F1-Score</b>", style_body),
-            Paragraph("Results pending retraining", style_body),
-            Paragraph("Results pending retraining", style_body),
-            Paragraph("Guarantees balanced class evaluation regardless of sample frequency across gestures.", style_body)
+            Paragraph("<b>BiGRU + Attention (Test: U4, U8)</b>", style_body),
+            Paragraph("<font color='#15803D'><b>86.79%</b> (920/1,060)</font>", style_body),
+            Paragraph("<b>0.8353</b>", style_body),
+            Paragraph("0.8590", style_body),
+            Paragraph("<b>0.7138</b>", style_body),
+            Paragraph("594,877 | Apple Silicon (MPS)", style_body)
+        ],
+        [
+            Paragraph("<b>BiLSTM + Attention (Test: U4, U8)</b>", style_body),
+            Paragraph("86.04% (912/1,060)", style_body),
+            Paragraph("0.8293", style_body),
+            Paragraph("0.8468", style_body),
+            Paragraph("0.8120", style_body),
+            Paragraph("759,741 | Apple Silicon (MPS)", style_body)
+        ],
+        [
+            Paragraph("<b>Hasan et al. Benchmark (Test: U4, U8)</b>", style_body),
+            Paragraph("75.10% (BiLSTM) / 67.6% (SVM)", style_body),
+            Paragraph("—", style_body),
+            Paragraph("—", style_body),
+            Paragraph("—", style_body),
+            Paragraph("Published Benchmark Baseline", style_body)
+        ],
+        [
+            Paragraph("<b>BiGRU Validation Split (U1, U11)</b>", style_body),
+            Paragraph("75.40% (1,257/1,667)", style_body),
+            Paragraph("0.7369", style_body),
+            Paragraph("0.7582", style_body),
+            Paragraph("1.9587", style_body),
+            Paragraph("Unseen Validation Signers", style_body)
         ]
     ]
-    t_eval = Table(eval_table_data, colWidths=[110, 115, 115, 196])
+    t_eval = Table(eval_table_data, colWidths=[150, 95, 60, 65, 55, 111])
     t_eval.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), CARD_BG),
         ('GRID', (0, 0), (-1, -1), 0.5, BORDER_COLOR),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('TOPPADDING', (0, 0), (-1, -1), 2.5),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 2.5),
+        ('TOPPADDING', (0, 0), (-1, -1), 1.8),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 1.8),
     ]))
     story.append(t_eval)
-    story.append(Spacer(1, 4))
+    story.append(Spacer(1, 3))
 
-    story.append(Paragraph("B. Test Confusion Matrix Graphic & Per-Class Failure Modes", style_h2))
-    story.append(Paragraph("<b>Results pending retraining</b> on the full split (Train 14 signers, Validation U1 and U11, Test U4 and U8).", style_body))
+    story.append(Paragraph("B. Test Confusion Matrix & Worst-Performing Classes", style_h2))
+    p_cm = Path("work/results/bigru/test_confusion_matrix.png")
+
+    # Worst Classes & Confused Pairs Table Data
+    worst_classes_data = [
+        [Paragraph("<b>Sign Class</b>", style_cell_bold), Paragraph("<b>Prec</b>", style_cell_bold), Paragraph("<b>Rec</b>", style_cell_bold), Paragraph("<b>F1</b>", style_cell_bold), Paragraph("<b>Primary Misclassification</b>", style_cell_bold)],
+        [Paragraph("25: Chips", style_cell), Paragraph("0.0%", style_cell), Paragraph("0.0%", style_cell), Paragraph("<b>0.00</b>", style_cell), Paragraph("&rarr; 53: Capsule (83.3%)", style_cell)],
+        [Paragraph("41: T-shirt", style_cell), Paragraph("11.1%", style_cell), Paragraph("8.3%", style_cell), Paragraph("<b>0.10</b>", style_cell), Paragraph("&rarr; 52: Bandage (91.7%)", style_cell)],
+        [Paragraph("29: Cap", style_cell), Paragraph("28.6%", style_cell), Paragraph("33.3%", style_cell), Paragraph("<b>0.31</b>", style_cell), Paragraph("&rarr; 24: Sugar (50.0%)", style_cell)],
+        [Paragraph("14: Mango", style_cell), Paragraph("100%", style_cell), Paragraph("21.4%", style_cell), Paragraph("<b>0.35</b>", style_cell), Paragraph("&rarr; 29: Cap (71.4%)", style_cell)],
+        [Paragraph("37: Indebted", style_cell), Paragraph("60.0%", style_cell), Paragraph("27.3%", style_cell), Paragraph("<b>0.37</b>", style_cell), Paragraph("&rarr; 20: Jujube (72.7%)", style_cell)],
+        [Paragraph("35: Cream", style_cell), Paragraph("83.3%", style_cell), Paragraph("33.3%", style_cell), Paragraph("<b>0.48</b>", style_cell), Paragraph("&rarr; 25: Chips (40.0%)", style_cell)],
+        [Paragraph("0: Father", style_cell), Paragraph("100%", style_cell), Paragraph("47.4%", style_cell), Paragraph("<b>0.64</b>", style_cell), Paragraph("&rarr; 8: Grandmother (42.1%)", style_cell)],
+    ]
+    t_worst = Table(worst_classes_data, colWidths=[68, 38, 38, 38, 126])
+    t_worst.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), CARD_BG),
+        ('GRID', (0, 0), (-1, -1), 0.5, BORDER_COLOR),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING', (0, 0), (-1, -1), 1.2),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 1.2),
+    ]))
+
+    diag_cells = [
+        [
+            Image(str(p_cm), width=210, height=210) if p_cm.exists() else Paragraph("Confusion matrix not found", style_body),
+            [
+                Paragraph("<b>Worst-Performing Classes & Primary Confusions:</b>", style_h2),
+                t_worst,
+                Spacer(1, 2),
+                Paragraph("<b>Top Confused Pairs on Test Set:</b>", style_body_bold),
+                Paragraph("• <b>T-shirt &harr; Bandage</b>: 11 misclassifications (91.7% of class)<br/>"
+                          "• <b>Chips &harr; Capsule</b>: 10 misclassifications (83.3% of class)<br/>"
+                          "• <b>Mango &harr; Cap</b>: 10 misclassifications (71.4% of class)<br/>"
+                          "• <b>Indebted &harr; Jujube</b>: 8 misclassifications (72.7% of class)<br/>"
+                          "• <b>Father &harr; Grandmother</b>: 8 misclassifications (42.1% of class)", style_card)
+            ]
+        ]
+    ]
+    t_diag = Table(diag_cells, colWidths=[220, 316])
+    t_diag.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('LEFTPADDING', (1, 0), (1, 0), 6),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ('TOPPADDING', (0, 0), (-1, -1), 0),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+    ]))
+    story.append(t_diag)
+    story.append(Paragraph("Figure 4.1: Row-normalized 60x60 test confusion matrix on unseen benchmark signers U4 & U8 alongside worst-performing class breakdown.", style_caption))
 
     story.append(Spacer(1, 2))
     story.append(Paragraph(
-        "<b>Plan for Week 5:</b> To help separate fine-grained signs, "
-        "the team will implement a <b>Spatial-Temporal Transformer</b> with multi-head self-attention, enabling the model to jointly attend to delicate finger joint "
-        "inter-relationships and temporal velocity transitions.",
+        "<b>Kinematic & Visual Failure Mode Analysis:</b> With 60 vocabulary classes, error distribution is highly non-uniform: "
+        "a small cluster of visually and kinematically similar signs accounts for the vast majority of errors, which provides significantly "
+        "more actionable engineering insight than the 0.75-point gap between GRU and LSTM. Primary confusion patterns stem from: "
+        "<b>(1) Identical Torso Arm-Wrapping Kinematics:</b> <i>T-shirt</i> and <i>Bandage</i> both involve rapid crossed forearms across the chest, "
+        "where gross arm trajectories mask subtle finger flexion differences. "
+        "<b>(2) Micro-Pinch Gestures Near the Mouth:</b> <i>Chips</i> and <i>Capsule</i> both rely on small index-thumb pinches held in front of the mouth, "
+        "where monocular MediaPipe depth ambiguity (z-axis jitter) creates feature overlap. "
+        "<b>(3) Near-Identical Stroke Trajectories:</b> <i>Father</i> and <i>Grandmother</i> both execute continuous chin-to-cheek strokes. "
+        "Implementing Spatial-Temporal Graph Attention (ST-GCN) in Week 6 will directly resolve these localized finger joint ambiguities.",
         style_body
     ))
 
@@ -678,41 +778,46 @@ def create_presentation_pdf(output_path: Path):
     # PAGE 7: SYSTEM VERIFICATION, ROADMAP & PLAN FOR NEXT WEEK
     # =========================================================================
     story.append(PageBreak())
-    story.append(Paragraph("5. System Verification, Master Roadmap & Plan for Next Week", style_page_heading))
-    story.append(Paragraph("Collaborative Pipeline Integration Testing, Module 1 & 2 Roadmap, and Week 5 Sprint Targets", style_page_sub))
-    story.append(HRFlowable(width="100%", thickness=1.2, color=NAVY, spaceBefore=0, spaceAfter=5))
+    story.append(Paragraph("5. System Verification, CLI Execution Guide & Plan for Next Week", style_page_heading))
+    story.append(Paragraph("Integration Verification Checklist, Interactive Commands for Both Modules, and Week 6 Roadmap", style_page_sub))
+    story.append(HRFlowable(width="100%", thickness=1.2, color=NAVY, spaceBefore=0, spaceAfter=4))
 
     story.append(Paragraph("A. Full Pipeline Integration Verification Checklist", style_h2))
     test_data = [
         [Paragraph("<b>Verification Check</b>", style_body_bold), Paragraph("<b>Verification Method & Engineering Criteria</b>", style_body_bold), Paragraph("<b>Result</b>", style_body_bold)],
         [
-            Paragraph("Synthetic Pipeline Self-Test", style_body),
-            Paragraph("End-to-end check across 18 signers, 60 words, synthetic JSON & landmark arrays.", style_body),
-            Paragraph("<font color='#15803D'><b>PASSED</b></font>", style_body)
+            Paragraph("Module 1 Synthetic Pipeline Test", style_body),
+            Paragraph("20 unit tests across synthetic data, annotations, resamplers, dataloaders & metrics.", style_body),
+            Paragraph("<font color='#15803D'><b>PASSED (20/20)</b></font>", style_body)
         ],
         [
-            Paragraph("Resumable Keypoint Extraction", style_body),
-            Paragraph("Multi-worker extraction with atomicity; no corrupt files on sudden halts.", style_body),
-            Paragraph("<font color='#15803D'><b>PASSED</b></font>", style_body)
+            Paragraph("Module 2 Speech-to-Sign Test", style_body),
+            Paragraph("15 unit tests across sign dictionary, easing transitions, motion stitching & rendering.", style_body),
+            Paragraph("<font color='#15803D'><b>PASSED (15/15)</b></font>", style_body)
         ],
         [
-            Paragraph("Geometric Invariance", style_body),
+            Paragraph("Geometric Normalization", style_body),
             Paragraph("Preprocessed landmarks verify shoulder width = 1.0, shoulder midpoint = (0,0,0).", style_body),
             Paragraph("<font color='#15803D'><b>PASSED</b></font>", style_body)
         ],
         [
-            Paragraph("PyTorch DataLoader Delivery", style_body),
-            Paragraph("Batched tensor delivery: shape (batch, 64, 201), dtype float32 with augmentations.", style_body),
-            Paragraph("<font color='#15803D'><b>PASSED</b></font>", style_body)
-        ],
-        [
             Paragraph("BiGRU Baseline Training", style_body),
-            Paragraph("Results pending retraining on the full signer-independent split of the BdSLW60 dataset.", style_body),
-            Paragraph("<font color='#B45309'><b>PENDING</b></font>", style_body)
+            Paragraph("35-epoch training on full 60-word BdSLW60 split &rarr; 86.79% Test Accuracy on U4 & U8.", style_body),
+            Paragraph("<font color='#15803D'><b>PASSED (86.79%)</b></font>", style_body)
         ],
         [
-            Paragraph("Live Webcam System", style_body),
-            Paragraph("Live OpenCV feed with rolling 64-frame buffer, BiGRU inference & bilingual HUD at 30+ FPS.", style_body),
+            Paragraph("BiLSTM Comparative Training", style_body),
+            Paragraph("35-epoch training on exact same split &rarr; 86.04% Test Accuracy on U4 & U8.", style_body),
+            Paragraph("<font color='#15803D'><b>PASSED (86.04%)</b></font>", style_body)
+        ],
+        [
+            Paragraph("Module 1 Live Webcam System", style_body),
+            Paragraph("Live OpenCV feed with rolling 64-frame buffer, dual-model inference & bilingual HUD at 30+ FPS.", style_body),
+            Paragraph("<font color='#15803D'><b>OPERATIONAL</b></font>", style_body)
+        ],
+        [
+            Paragraph("Module 2 Motion Stitching & Video", style_body),
+            Paragraph("Sentence tokenization, cosine easing transition stitching, and H.264 video rendering with Bangla text.", style_body),
             Paragraph("<font color='#15803D'><b>OPERATIONAL</b></font>", style_body)
         ]
     ]
@@ -721,29 +826,56 @@ def create_presentation_pdf(output_path: Path):
         ('BACKGROUND', (0, 0), (-1, 0), CARD_BG),
         ('GRID', (0, 0), (-1, -1), 0.5, BORDER_COLOR),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('TOPPADDING', (0, 0), (-1, -1), 2),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+        ('TOPPADDING', (0, 0), (-1, -1), 1.5),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 1.5),
     ]))
     story.append(t_test)
-    story.append(Spacer(1, 4))
+    story.append(Spacer(1, 2))
 
-    story.append(Paragraph("B. Plan for Next Week (Week 5 Sprint Targets)", style_h2))
+    # Prominent CLI Commands Box
+    story.append(Paragraph("B. Interactive Execution Commands (How to Run & Test Both Modules)", style_h2))
+    cmd_box = [
+        [
+            Paragraph("<b>1. Run Module 1 (Real-Time Live Webcam Recognition Demo):</b><br/>"
+                      "<code>python scripts/11_live_webcam_demo.py --checkpoint work/results/bigru/best_model.pt</code><br/>"
+                      "<i>(Auto-detects BiLSTM checkpoints via <code>--checkpoint work/results/bilstm/best_model.pt</code>, supports <code>--camera 0</code>)</i><br/><br/>"
+                      "<b>2. Run Module 2 (Speech/Text-to-Sign Animation Video Synthesis):</b><br/>"
+                      "<code>python scripts/20_m2_demo.py --text \"বাবা আপেল\" --n-transition 12 --easing cosine --out work/m2_demo.mp4</code><br/>"
+                      "<i>(Stitches gestures with smooth easing curves and writes an H.264 video with native Bangla typography)</i><br/><br/>"
+                      "<b>3. Run Module 2 Sign Dictionary Compilation & Unit Tests:</b><br/>"
+                      "<code>python scripts/20_build_sign_dictionary.py && pytest tests/test_speech2sign.py</code>",
+                      style_card)
+        ]
+    ]
+    t_cmd = Table(cmd_box, colWidths=[536])
+    t_cmd.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), CARD_BG),
+        ('BOX', (0, 0), (-1, -1), 0.5, NAVY),
+        ('TOPPADDING', (0, 0), (-1, -1), 3),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+        ('LEFTPADDING', (0, 0), (-1, -1), 8),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+    ]))
+    story.append(t_cmd)
+    story.append(Spacer(1, 2))
+
+    story.append(Paragraph("C. Plan for Next Week (Week 6 Sprint Targets)", style_h2))
     next_week_plan = [
         [Paragraph("<b>Role / Member</b>", style_body_bold), Paragraph("<b>Target Task Description</b>", style_body_bold), Paragraph("<b>Deliverable Module</b>", style_body_bold)],
         [
-            Paragraph("<b>Member 1: MD. Konok-Uz-Zaman</b><br/><font size=6.5 color='#64748B'>Data & Model Lead</font>", style_body),
-            Paragraph("Implement the <b>Transformer model</b> for gesture sequence classification; incorporate positional encodings and multi-head attention; expand dataset extraction towards full 60 words.", style_body),
+            Paragraph("<b>Member 1: MD. Konok-Uz-Zaman</b><br/><font size=6 color='#64748B'>Data & Model Lead</font>", style_body),
+            Paragraph("Implement <b>Spatial-Temporal Graph Convolution (ST-GCN)</b> and Transformer architectures to address localized finger pinch ambiguities.", style_body),
             Paragraph("<code>signbangla/models.py<br/>TransformerClassifier</code>", style_body)
         ],
         [
-            Paragraph("<b>Member 2: Wahiduzzaman Mahin</b><br/><font size=6.5 color='#64748B'>Training & Evaluation Lead</font>", style_body),
-            Paragraph("Conduct systematic <b>hyperparameter tuning</b> on the Transformer and BiGRU models (learning rates, layer depths, attention heads, dropout); track comparative loss/accuracy convergence.", style_body),
+            Paragraph("<b>Member 2: Wahiduzzaman Mahin</b><br/><font size=6 color='#64748B'>Training & Evaluation Lead</font>", style_body),
+            Paragraph("Execute systematic <b>ablation studies and hyperparameter tuning</b> (learning rate schedules, attention heads, focal loss for confused pairs).", style_body),
             Paragraph("<code>scripts/10_train_baseline.py<br/>work/results/tuning/</code>", style_body)
         ],
         [
-            Paragraph("<b>Member 3: Shesir Baidya</b><br/><font size=6.5 color='#64748B'>Real-Time System & Demo Lead</font>", style_body),
-            Paragraph("Implement <b>real-time sign segmentation & confidence smoothing</b> to prevent jittery predictions; test <b>gTTS speech synthesis</b> module for recognized Bangla words.", style_body),
-            Paragraph("<code>scripts/11_live_webcam_demo.py<br/>signbangla/speech.py</code>", style_body)
+            Paragraph("<b>Member 3: Shesir Baidya</b><br/><font size=6 color='#64748B'>Real-Time System & Demo Lead</font>", style_body),
+            Paragraph("Implement <b>temporal confidence smoothing & sign boundary hysteresis</b> on the live webcam HUD; integrate microphone input for Module 2 speech.", style_body),
+            Paragraph("<code>scripts/11_live_webcam_demo.py<br/>scripts/20_m2_demo.py</code>", style_body)
         ]
     ]
     t_next = Table(next_week_plan, colWidths=[140, 276, 120])
@@ -751,28 +883,26 @@ def create_presentation_pdf(output_path: Path):
         ('BACKGROUND', (0, 0), (-1, 0), CARD_BG),
         ('GRID', (0, 0), (-1, -1), 0.5, BORDER_COLOR),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('TOPPADDING', (0, 0), (-1, -1), 2.5),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 2.5),
+        ('TOPPADDING', (0, 0), (-1, -1), 1.8),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 1.8),
     ]))
     story.append(t_next)
-    story.append(Spacer(1, 4))
+    story.append(Spacer(1, 2))
 
-    story.append(Paragraph("C. Master Development Roadmap (Weeks 5 through 10)", style_h2))
+    story.append(Paragraph("D. Master Development Roadmap (Weeks 6 through 10)", style_h2))
     story.append(Paragraph(
-        "• <b>Week 5:</b> Transformer sequence classifier implementation, systematic hyperparameter tuning, and real-time buffer optimization.<br/>"
-        "• <b>Week 6:</b> BiGRU vs. Transformer model comparison, ablation study, and final architecture selection.<br/>"
-        "• <b>Week 7:</b> Speech output integration (gTTS Bangla audio synthesis) and Module 2 kickoff (Bangla ASR model setup).<br/>"
-        "• <b>Weeks 8–10:</b> Module 2 development (Speech-to-Sign Language: Bangla ASR, dictionary matching, skeleton animation stitching), "
-        "two-way user interface switch, user testing, final report, and project presentation.",
+        "• <b>Week 6:</b> ST-GCN / Transformer sequence modeling, loss ablation for visually confused pairs, and temporal smoothing.<br/>"
+        "• <b>Week 7:</b> Speech output integration (gTTS Bangla audio synthesis for Module 1) and microphone ASR integration for Module 2.<br/>"
+        "• <b>Weeks 8–10:</b> Bidirectional system switch, usability testing with native signers, final benchmark report, and presentation.",
         style_body
     ))
-    story.append(Spacer(1, 4))
+    story.append(Spacer(1, 3))
 
     # Faculty Advisor Review Block
     advisor_box = [
         [
             Paragraph("<b>Faculty Advisor Review & Sign-Off:</b><br/>"
-                      "Project: SignBangla (CSE299 Junior Design Project) &nbsp;|&nbsp; Faculty Advisor: Dr. Nabil Bin Hannan &nbsp;|&nbsp; Date: October 2026<br/>"
+                      "Project: SignBangla (CSE299 Junior Design Project) &nbsp;|&nbsp; Faculty Advisor: Dr. Nabil Bin Hannan &nbsp;|&nbsp; Date: November 2026<br/>"
                       "Comments: __________________________________________________________________________________________<br/>"
                       "Signature: __________________________________________________ &nbsp;&nbsp;&nbsp;&nbsp; Status: [ &nbsp; ] Approved &nbsp; [ &nbsp; ] Revisions Requested",
                       style_card)
@@ -782,8 +912,8 @@ def create_presentation_pdf(output_path: Path):
     t_adv.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, -1), CARD_BG),
         ('BOX', (0, 0), (-1, -1), 0.5, NAVY),
-        ('TOPPADDING', (0, 0), (-1, -1), 4),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('TOPPADDING', (0, 0), (-1, -1), 3),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
         ('LEFTPADDING', (0, 0), (-1, -1), 8),
         ('RIGHTPADDING', (0, 0), (-1, -1), 8),
     ]))

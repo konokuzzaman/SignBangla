@@ -25,7 +25,7 @@ from torch.optim.lr_scheduler import CosineAnnealingLR
 from signbangla.dataset import class_weights, make_dataloaders, make_datasets
 from signbangla.labels import N_CLASSES, class_names
 from signbangla.metrics import evaluate, evaluate_and_save
-from signbangla.models import BiGRUClassifier
+from signbangla.models import BiGRUClassifier, BiLSTMClassifier
 from signbangla.utils import load_config, work_dir
 
 
@@ -121,32 +121,34 @@ def plot_training_history(history, save_path):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Train BiGRU Baseline for Bengali Sign Language Recognition")
+    ap = argparse.ArgumentParser(description="Train BiGRU or BiLSTM Baseline for Bengali Sign Language Recognition")
     ap.add_argument("--config", help="Path to config file")
+    ap.add_argument("--model-type", choices=["bigru", "bilstm"], default="bigru", help="Model architecture: bigru or bilstm")
     ap.add_argument("--epochs", type=int, default=35, help="Number of training epochs")
     ap.add_argument("--lr", type=float, default=1e-3, help="Learning rate")
     ap.add_argument("--weight-decay", type=float, default=1e-4, help="Weight decay for AdamW")
-    ap.add_argument("--hidden-dim", type=int, default=128, help="BiGRU hidden state dimension")
-    ap.add_argument("--num-layers", type=int, default=2, help="Number of BiGRU recurrent layers")
+    ap.add_argument("--hidden-dim", type=int, default=128, help="Hidden state dimension")
+    ap.add_argument("--num-layers", type=int, default=2, help="Number of recurrent layers")
     ap.add_argument("--dropout", type=float, default=0.3, help="Dropout probability")
     ap.add_argument("--no-attention", action="store_true", help="Disable temporal attention pooling")
     ap.add_argument("--weighted-loss", action="store_true", help="Use inverse frequency class weights")
     ap.add_argument("--device", default="auto", help="Execution device: auto, cpu, cuda, or mps")
-    ap.add_argument("--out-dir", default="work/results/bigru", help="Directory to save checkpoints and metrics")
+    ap.add_argument("--out-dir", default=None, help="Directory to save checkpoints and metrics (default: work/results/<model_type>)")
     ap.add_argument("--seed", type=int, default=42, help="Random seed")
     args = ap.parse_args()
 
     set_seed(args.seed)
     cfg = load_config(args.config)
-    out_dir = Path(args.out_dir)
+    out_dir = Path(args.out_dir) if args.out_dir is not None else Path(f"work/results/{args.model_type}")
     out_dir.mkdir(parents=True, exist_ok=True)
 
     device = get_device(args.device)
+    model_name = "BiLSTM" if args.model_type == "bilstm" else "BiGRU"
     print(f"============================================================")
-    print(f"  SignBangla - BiGRU Baseline Training (Phase 2 / Week 4)   ")
+    print(f"  SignBangla - {model_name} Baseline Training (Phase 2 / Week 4)   ")
     print(f"============================================================")
     print(f"Device: {device} | Random Seed: {args.seed}")
-    print(f"Architecture: BiGRU (hidden_dim={args.hidden_dim}, layers={args.num_layers}, "
+    print(f"Architecture: {model_name} (hidden_dim={args.hidden_dim}, layers={args.num_layers}, "
           f"attention={not args.no_attention}, dropout={args.dropout})")
     print(f"Output directory: {out_dir}\n")
 
@@ -160,7 +162,8 @@ def main():
     sample_x, _ = train_ds[0]
     input_dim = sample_x.shape[-1]
 
-    model = BiGRUClassifier(
+    model_cls = BiLSTMClassifier if args.model_type == "bilstm" else BiGRUClassifier
+    model = model_cls(
         input_dim=input_dim,
         hidden_dim=args.hidden_dim,
         num_layers=args.num_layers,
@@ -218,6 +221,7 @@ def main():
                 "optimizer_state_dict": optimizer.state_dict(),
                 "val_metrics": val_metrics,
                 "config": {
+                    "model_type": args.model_type,
                     "input_dim": input_dim,
                     "hidden_dim": args.hidden_dim,
                     "num_layers": args.num_layers,
