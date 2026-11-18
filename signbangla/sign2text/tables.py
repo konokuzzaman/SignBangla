@@ -69,6 +69,74 @@ VERBS = {
 }
 COPULA = "আছে"
 
+# Two more tenses, kept in their own table (data/module3/verb_tenses.csv) so verbs.csv stays as it is:
+# present_perfect (খেয়েছে) and past_habitual (খেতেন, "used to eat"). Persons 1, 2_informal, 2_formal, 3.
+EXTRA_TENSES = ("present_perfect", "past_habitual")
+
+
+def _extra(perfect, habitual):
+    return dict(zip(EXTRA_TENSES, (perfect, habitual)))
+
+
+def _with_extra(prefix, forms):
+    return {t: "|".join(f"{prefix} {f}" for f in v.split("|")) for t, v in forms.items()}
+
+
+_KORA_EXTRA = _extra("করেছি|করেছ|করেছেন|করেছে", "করতাম|করতে|করতেন|করত")
+VERB_TENSES_EXTRA = {
+    "খাওয়া": _extra("খেয়েছি|খেয়েছ|খেয়েছেন|খেয়েছে", "খেতাম|খেতে|খেতেন|খেত"),
+    "পান করা": _with_extra("পান", _KORA_EXTRA),
+    "যাওয়া": _extra("গিয়েছি|গিয়েছ|গিয়েছেন|গিয়েছে", "যেতাম|যেতে|যেতেন|যেত"),
+    "আসা": _extra("এসেছি|এসেছ|এসেছেন|এসেছে", "আসতাম|আসতে|আসতেন|আসত"),
+    "চাওয়া": _extra("চেয়েছি|চেয়েছ|চেয়েছেন|চেয়েছে", "চাইতাম|চাইতে|চাইতেন|চাইত"),
+    "দেওয়া": _extra("দিয়েছি|দিয়েছ|দিয়েছেন|দিয়েছে", "দিতাম|দিতে|দিতেন|দিত"),
+    "নেওয়া": _extra("নিয়েছি|নিয়েছ|নিয়েছেন|নিয়েছে", "নিতাম|নিতে|নিতেন|নিত"),
+    "ঘুমানো": _extra("ঘুমিয়েছি|ঘুমিয়েছ|ঘুমিয়েছেন|ঘুমিয়েছে", "ঘুমাতাম|ঘুমাতে|ঘুমাতেন|ঘুমাত"),
+    "বসা": _extra("বসেছি|বসেছ|বসেছেন|বসেছে", "বসতাম|বসতে|বসতেন|বসত"),
+    "দেখা": _extra("দেখেছি|দেখেছ|দেখেছেন|দেখেছে", "দেখতাম|দেখতে|দেখতেন|দেখত"),
+    "শোনা": _extra("শুনেছি|শুনেছ|শুনেছেন|শুনেছে", "শুনতাম|শুনতে|শুনতেন|শুনত"),
+    "বলা": _extra("বলেছি|বলেছ|বলেছেন|বলেছে", "বলতাম|বলতে|বলতেন|বলত"),
+    "জানা": _extra("জেনেছি|জেনেছ|জেনেছেন|জেনেছে", "জানতাম|জানতে|জানতেন|জানত"),
+    "করা": _KORA_EXTRA,
+    "সাহায্য করা": _with_extra("সাহায্য", _KORA_EXTRA),
+    "অপেক্ষা করা": _with_extra("অপেক্ষা", _KORA_EXTRA),
+    "কেনা": _extra("কিনেছি|কিনেছ|কিনেছেন|কিনেছে", "কিনতাম|কিনতে|কিনতেন|কিনত"),
+    "পড়া": _extra("পড়েছি|পড়েছ|পড়েছেন|পড়েছে", "পড়তাম|পড়তে|পড়তেন|পড়ত"),
+    "লেখা": _extra("লিখেছি|লিখেছ|লিখেছেন|লিখেছে", "লিখতাম|লিখতে|লিখতেন|লিখত"),
+    "থাকা": _extra("থেকেছি|থেকেছ|থেকেছেন|থেকেছে", "থাকতাম|থাকতে|থাকতেন|থাকত"),
+    "পারা": _extra("পেরেছি|পেরেছ|পেরেছেন|পেরেছে", "পারতাম|পারতে|পারতেন|পারত"),
+    "বোঝা": _extra("বুঝেছি|বুঝেছ|বুঝেছেন|বুঝেছে", "বুঝতাম|বুঝতে|বুঝতেন|বুঝত"),
+}
+
+# Words added for the Ban-Sign-Sent-9K sentences (data/module3/lexicon_extra.csv, verified = false).
+# word, pos, semantic, locative, variants, english, written (the spelling to write when the normalised word differs).
+# A word already in lexicon.csv keeps its row; pos, semantic and locative given here replace that row's values and
+# the variants are added. A "marker" sign sets tense or aspect and is not written itself.
+LEXICON_EXTRA = [
+    ("ছিল", "marker", "aspect", "", "", "was (past marker)", ""),
+    ("হবে", "marker", "tense", "", "", "will (future marker)", ""),
+    ("হয়েছে", "marker", "aspect", "", "", "has (perfect marker)", ""),
+    ("আগে", "marker", "aspect", "", "", "before / used to (habitual marker)", ""),
+    ("সকাল", "time", "time_of_day", "সকালে", "", "morning", ""),
+    ("দুপুর", "time", "time_of_day", "দুপুরে", "", "noon", ""),
+    ("বিকাল", "time", "time_of_day", "বিকালে", "", "afternoon", ""),
+    ("বিকেল", "time", "time_of_day", "বিকেলে", "", "afternoon", ""),
+    ("সন্ধ্যা", "time", "time_of_day", "সন্ধ্যায়", "", "evening", ""),
+    ("রাত", "time", "time_of_day", "রাতে", "", "night", ""),
+    ("দাদী", "noun", "kin", "", "দাদি", "grandmother (father's mother)", ""),
+    ("বউ", "noun", "kin", "", "", "wife", ""),
+    ("জামাই", "noun", "kin", "", "", "son-in-law / husband", ""),
+    ("শাক-সব্জী", "noun", "food", "", "শাক-সবজি", "vegetables", "শাক-সব্জী"),
+    ("চা", "noun", "food", "", "", "tea", ""),
+    ("কফি", "noun", "food", "", "", "coffee", ""),
+    ("মাংস", "noun", "food", "", "", "meat", ""),
+    ("ডাল", "noun", "food", "", "", "lentils", ""),
+    ("ফল", "noun", "food", "", "", "fruit", ""),
+    ("খাওয়া", "verb", "", "", "খাওয়ায়া", "eat", ""),  # খাওয়ায়া: the dataset's spelling of the eat sign
+]
+MARKERS = ("না", "নেই", "ছিল", "হবে", "হয়েছে")  # final signs that set tense / negation
+HABITUAL_MARKER = "আগে"
+
 # Words that make a sentence without a verb. kind "fixed": the phrase replaces the word, by tense (the subject
 # becomes possessive: আমার জ্বর হয়েছে). kind "copula": the word is followed by the copula for the subject's person
 # (আমি ভালো আছি, আপনি কেমন আছেন).

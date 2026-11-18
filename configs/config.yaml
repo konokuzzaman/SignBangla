@@ -242,6 +242,19 @@ module3:                                # Sign -> text: rule-based sentence buil
   verbs: "data/module3/verbs.csv"       # every form written out; verified = false until checked by hand
   predicates: "data/module3/predicates.csv"
   test_sentences: "data/module3/test_sentences.csv"
+  lexicon_extra: "data/module3/lexicon_extra.csv"   # Ban-Sign-Sent-9K words (tables.LEXICON_EXTRA); verified = false
+  verb_tenses: "data/module3/verb_tenses.csv"       # present_perfect and past_habitual forms; verified = false
+  corpus:                               # rules counted from Ban-Sign-Sent-9K train pairs (scripts/53)
+    use: true                           # false: hand-written rules only
+    rules: "data/module3/corpus_rules.json"  # written by scripts/53 from the train split only
+    min_support: 3                      # a rule needs at least this many train rows
+    min_share: 0.6                      # a compound needs this share of the rows with its signs
+    splits: "data/bansign9k/splits.csv" # train / dev / test of data/bansign9k/sentences.csv
+    split_fractions: [0.7, 0.15, 0.15]
+    split_seed: 0
+    time_words: ["সকাল", "দুপুর", "বিকাল", "সন্ধ্যা", "রাত"]  # for the (subject + object) split groups
+    eval_dir: "module3/eval_bansign9k_v2"  # inside work_dir
+    baseline: "module3/eval_bansign9k/results.csv"  # Part A output of the builder before these rules
   eval_dir: "module3/eval"              # inside work_dir
   past_tense: "past_perfect"            # tense for গতকাল etc.: past_perfect (গিয়েছিলাম) or past_simple (গেলাম)
   past_words: ["গতকাল"]
@@ -274,3 +287,49 @@ module3:                                # Sign -> text: rule-based sentence buil
       still_speed: 0.2                  # wrist speed (shoulder widths per second) below which the hands count as still
       preroll_s: 0.2                    # frames kept from before the start
       margin_s: 0.1                     # frames kept after the last movement
+bansign9k:                              # Ban-Sign-Sent-9K (Hugging Face, no licence stated: research use only, never shared)
+  hf_dataset: "banglagov/Ban-Sign-Sent-9K-V1"
+  xlsx: "data/bansign9k/Bangla_Sign_Sentence.xlsx"  # downloaded as it is; never changed
+  sentences: "data/bansign9k/sentences.csv"         # Sentence ID, natural and sign sentence (scripts/46)
+  vocabulary: "data/bansign9k/vocabulary.csv"       # every sign word with its count
+  word_timings: "data/bansign9k/word_timings.csv"   # the 44 word annotations (ids, word, start, end; no personal data)
+  eval_dir: "module3/eval_bansign9k"                # inside work_dir: the sentence builder on all sign sentences
+  zip_dir: "data/bansign9k/zip"         # Sign_Videos.z01 ... z09 + Sign_Videos.zip (about 20.5 GB), scripts/48
+  min_free_gb: 60
+  fps_range: [20, 40]                   # a file frame rate outside this is wrong (335 of the 800 videos say 1000, 2 say 62.5)
+  fallback_fps: 30                      # used instead; those videos have as many frames per sentence as the 30 fps ones                       # scripts/48 stops before downloading when the drive has less free space
+  dir: "bansign9k"                      # inside work_dir: video_index.csv, logs, subset.csv, cuts.csv, reports
+  videos_dir: "bansign9k/videos"        # every video, Sign_Videos/<sentence id>/<file> as in the zip
+  keypoints_dir: "bansign9k/keypoints"  # raw/ (whole video) and last_sign/ (the cut-out last sign), scripts/49
+  preview_dir: "core_vocab_check/bansign9k"
+  extract_workers: 4
+  subset:                               # videos per last sign word, spread evenly over the 5 signers (scripts/49)
+    per_marker: {"না": 250, "নেই": 250, "ছিল": 100, "হবে": 100, "হয়েছে": 100}
+    max_partners: 1                     # extra partner videos for a chosen video without one (for the DTW cut)
+    seed: 0
+  cut:                                  # cutting out the last sign (signbangla/extra_sources/last_sign.py)
+    raise_frac: 0.1                     # signing = a wrist this share of the shoulder-to-hip distance above its own
+    margin_frames: 3                    # resting height in the video (the signers rest their hands on the lap)
+    dtw_factor: 2.0                     # the videos stop matching where the alignment cost exceeds this x the shared
+    dtw_min_cost: 0.15                  # part's median cost, and at least this (shoulder widths)
+    smooth: 5                           # frames
+    snap_back_s: 0.3                    # a DTW start moves back to the slowest hand moment this far before it
+    min_s: 0.3                          # cuts shorter or longer than this are dropped
+    max_s: 2.5
+    motion_weight: 0.5                  # motion fallback: weight of "near the expected start" against "slowest point"
+  preview_fps: 30
+  preview_clips: 6                      # clips per word in the preview video
+dynamic_du:                             # Dhaka University dynamic BdSL videos (Kaggle; licence not stated: research use
+  kaggle_dataset: "hassan0008jhh/dataset-bangla-sign-language"  # only, never shared). scripts/47
+  dir: "dynamic_du"                     # inside work_dir: zip_index.json, file_list.csv, class_table.csv, logs
+  videos_dir: "dynamic_du/videos"       # downloaded .avi files, paths as in the zip
+  keypoints_dir: "dynamic_du/keypoints" # raw/ (whole video) and trials/ (signing part), as BdSL-300
+  download_workers: 4
+  extract_workers: 4
+  classes: ["Please", "ghumano", "hello", "Leave", "apni kemon achen", "apnar nam ki", "Where Do You Live",
+            "What Time is It", "ami valo achi", "abar dekha hbe", "shuvo sokal", "shuvo ratri", "Good to See You",
+            "apnake kivabe sahajjo korte pari"]
+  preview_dir: "core_vocab_check/dynamic_du"  # inside work_dir, scripts/47b
+  preview_fps: 30
+  preview_clips: 6                      # clips per class in the preview video
+  preview_length: 0.5                   # only clips within this share of the class's median length are shown

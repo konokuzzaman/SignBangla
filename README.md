@@ -357,6 +357,30 @@ python scripts_speech_to_sign_demo.py --style studio3d          # microphone: e
 - Settings (port, camera, colours, lifting): `speech2sign.studio3d` in `configs/config.yaml`. Tests:
   `tests/test_studio3d.py`.
 
+### More sign sources: Ban-Sign-Sent-9K and DU dynamic signs
+
+The words our sentences need but the word datasets lack (না, নেই, ছিল, হবে, হয়েছে, greetings) come from two more
+sources (`signbangla/extra_sources/`). Neither states a licence, so both are research use only and never shared.
+
+- **Ban-Sign-Sent-9K** (Hugging Face `banglagov/Ban-Sign-Sent-9K-V1`): sentence videos.
+  - `scripts/46` reads its sentence list.
+  - `scripts/49` fetches about 800 videos, extracts keypoints and cuts out the last sign (DTW against the same
+    signer's sentence that differs only in the last word; a motion cut otherwise).
+  - `scripts/48` downloads the full split zip (about 20.5 GB) when needed.
+- **DU dynamic BdSL** (Kaggle `hassan0008jhh/dataset-bangla-sign-language`): `scripts/47` downloads 14 word and phrase
+  classes and extracts keypoints.
+
+```powershell
+python scripts\46_bansign9k_sentences.py
+python scripts\47_dynamic_du.py                     # --list-only: file list only; --check-only: reports only
+python scripts\47b_dynamic_du_previews.py           # previews per class; --classes hello,Please
+python scripts\49_bansign9k_last_sign.py            # --time-test 10, --cut-only
+python scripts\48_bansign9k_videos.py               # optional: the whole split zip
+```
+
+New words go to `data/core_vocab/word_list.csv` with `verified = false`. Settings: `bansign9k`, `dynamic_du`. Tests:
+`tests/test_extra_sources.py`.
+
 ## Module 3: Sign Words to a Bangla Sentence
 
 BdSL is signed mostly in subject-object-verb order without verb endings, case endings or small function words, so
@@ -380,6 +404,44 @@ python scripts\50_sentence_builder_eval.py        # 50 test sentences -> work/mo
 ```
 
 Settings: `module3` in `configs/config.yaml`. Tests: `tests/test_sentence_builder.py`.
+
+**Rules counted from Ban-Sign-Sent-9K** (`signbangla/sign2text/corpus_rules.py`, `scripts/53_bansign9k_module3.py`).
+The 1,922 sign sentence -> natural sentence pairs of Ban-Sign-Sent-9K (`data/bansign9k/sentences.csv`, from
+`scripts/46`) are split 70/15/15 into train / dev / test by (subject + food) group, seed 0
+(`data/bansign9k/splits.csv`). Only the train rows are used to count the rules, which go to
+`data/module3/corpus_rules.json` with their support:
+- two kin signs said as one word (চাচা বউ -> চাচী, খালা জামাই -> খালু)
+- the verb for sentences without a verb sign (food -> খাওয়া)
+- tense and negation from the final marker:
+  - হবে -> খাবে
+  - ছিল -> খেয়েছিল
+  - হয়েছে -> খেয়েছে
+  - নেই -> খায়নি
+  - না -> খান না
+  - আগে ... ছিল / না -> খেতেন / খেতেন না
+- the person form for kin subjects (honorific খান / খেতেন for the present and the habitual past)
+
+Time-of-day words before a verb also take the locative (সকাল -> সকালে), and the marker signs are not written.
+New words (ছিল, হবে, হয়েছে, আগে, বিকাল, বউ, জামাই, শাক-সব্জী, the dataset spelling খাওয়ায়া, ...) are in
+`data/module3/lexicon_extra.csv`, and the present-perfect / habitual-past verb forms are in
+`data/module3/verb_tenses.csv`; `lexicon.csv` and `verbs.csv` are unchanged. All rows are `verified = false`.
+
+| Split | Exact | Ceiling | chrF | BLEU | Before (exact / chrF) |
+|---|---:|---:|---:|---:|---:|
+| dev (278) | 94.2% | 94.6% | 98.8 | 96.1 | 0% / 42.3 |
+| test (274, run once) | 90.9% | 91.2% | 98.0 | 93.6 | 0% / 39.5 |
+
+The ceiling is the exact-match rate when each distinct sign sentence always gets its most common natural sentence.
+Almost every remaining error is a final না that the data says as either খান না or খাবে না with the same signs. The
+50 test sentences stay at 47/50. Set `module3.corpus.use: false` for the hand-written rules only.
+
+```powershell
+python scripts\53_bansign9k_module3.py           # splits (if missing), rules from train, scores on train + dev
+python scripts\53_bansign9k_module3.py --final   # also the test split, once -> work/module3/eval_bansign9k_v2/
+```
+
+Tests: `tests/test_sentence_corpus.py` (each rule, the split, and that dev / test rows never change the rules).
+Ban-Sign-Sent-9K (Hugging Face `banglagov/Ban-Sign-Sent-9K-V1`) states no licence: research use only, not shared.
 
 **On-screen demo** (`scripts/52_sentence_screen.py`): a page in the browser on this computer (local server on
 127.0.0.1, standard library only) with the sentence in large text, the sign words as chips, Speak / Undo / Clear and a

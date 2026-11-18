@@ -10,6 +10,9 @@ lexicon.csv  word (dictionary form), pos, person, possessive, locative, has_sign
              Every row starts with verified = false.
 verbs.csv    verb, person, the five tense forms, verified
 predicates.csv   word, kind (fixed / copula), present, past, future, verified
+lexicon_extra.csv   words added for Ban-Sign-Sent-9K (tables.LEXICON_EXTRA): new words, and pos / semantic / locative /
+             variants for words lexicon.csv already has (lexicon.csv itself is not changed)
+verb_tenses.csv  verb, person, present_perfect, past_habitual, verified (tables.VERB_TENSES_EXTRA)
 """
 import csv
 import re
@@ -27,7 +30,9 @@ LEXICON_COLUMNS = ["word", "pos", "person", "possessive", "locative", "has_sign"
 VERB_COLUMNS = ["verb", "person", *T.TENSES, "verified"]
 PREDICATE_COLUMNS = ["word", "kind", "present", "past", "future", "verified"]
 TEST_COLUMNS = ["id", "sign_words", "expected_bangla", "category", "is_question", "verified"]
-POS = ("pronoun", "verb", "noun", "question", "negation", "time", "adjective", "number", "greeting", "other")
+EXTRA_COLUMNS = ["word", "pos", "semantic", "locative", "variants", "english", "written", "verified", "source"]
+VERB_TENSE_COLUMNS = ["verb", "person", *T.EXTRA_TENSES, "verified"]
+POS = ("pronoun", "verb", "noun", "question", "negation", "time", "adjective", "number", "greeting", "marker", "other")
 CORE_POS = {"answer": "other", "extra": "noun", "word": "noun"}
 NUKTA, HASANT = "়", "্"
 
@@ -200,13 +205,26 @@ def test_rows():
             for i, s, e, c, q in T.TEST_SENTENCES]
 
 
+def extra_rows():
+    return [dict(word=w, pos=p, semantic=s, locative=loc, variants=v, english=e, written=wr, verified="false",
+                 source="bansign9k") for w, p, s, loc, v, e, wr in T.LEXICON_EXTRA]
+
+
+def verb_tense_rows():
+    return [dict(verb=v, person=p, verified="false", **{t: forms[t].split("|")[i] for t in T.EXTRA_TENSES})
+            for v, forms in T.VERB_TENSES_EXTRA.items() for i, p in enumerate(T.PERSONS)]
+
+
 def write_missing(paths, sources=None, rebuild_lexicon=False):
     """Write the Module 3 data files that do not exist yet (never overwrites a hand-edited file). With
-    rebuild_lexicon, lexicon.csv is built again from the sources, keeping its verified values. -> files written."""
+    rebuild_lexicon, lexicon.csv is built again from the sources, keeping its verified values. -> files written.
+    lexicon_extra and verb_tenses are written only when paths has them."""
     written = []
     for key, rows, columns in (("verbs", verb_rows, VERB_COLUMNS), ("predicates", predicate_rows, PREDICATE_COLUMNS),
-                               ("test_sentences", test_rows, TEST_COLUMNS)):
-        if not Path(paths[key]).exists():
+                               ("test_sentences", test_rows, TEST_COLUMNS),
+                               ("lexicon_extra", extra_rows, EXTRA_COLUMNS),
+                               ("verb_tenses", verb_tense_rows, VERB_TENSE_COLUMNS)):
+        if key in paths and not Path(paths[key]).exists():
             write_csv(paths[key], rows(), columns)
             written.append(paths[key])
     if rebuild_lexicon or not Path(paths["lexicon"]).exists():
@@ -216,22 +234,67 @@ def write_missing(paths, sources=None, rebuild_lexicon=False):
     return written
 
 
+_NORMALISED = ("word", "verb", "variants", "possessive", "locative", "present", "past", "future", *T.TENSES,
+               *T.EXTRA_TENSES)
+
+
+def normalise_rows(rows):
+    """The project's normalisation on the word columns ('written' is kept exactly as it is)."""
+    return [{k: norm(v) if k in _NORMALISED and v else (v or "") for k, v in r.items()} for r in rows]
+
+
 def read_csv(path):
     rows = _read_csv(path)
     if rows is None:
         raise FileNotFoundError(f"{path} not found; run scripts/50_sentence_builder_eval.py once to write it")
-    return [{k: norm(v) if k in ("word", "verb", "variants", "possessive", "locative", "present", "past", "future",
-                                 *T.TENSES) and v else (v or "") for k, v in r.items()} for r in rows]
+    return normalise_rows(rows)
+
+
+def _merge_extra(entries, extra):
+    """Add the lexicon_extra rows to the entries: a new word gets a full row, a known word gets the given pos /
+    semantic / locative and extra variants. -> {normalised word: spelling to write} for rows with 'written'."""
+    written = {}
+    for r in extra:
+        w = r["word"]
+        e = entries.get(w)
+        if e is None:
+            pos, sem = r["pos"] or "noun", r["semantic"]
+            possessive = possessive_of(w) if pos == "noun" else ""
+            e = dict(word=w, pos=pos, person="3" if sem in ("kin", "person") else "", possessive=possessive,
+                     locative=r["locative"] or (f"{possessive} কাছে" if sem in ("kin", "person") else ""),
+                     has_sign="no", verified=r.get("verified", "false"), semantic=sem, english=r["english"],
+                     variants="", source=r.get("source", ""))
+            entries[w] = e
+        else:
+            e = entries[w] = dict(e)
+            for k in ("pos", "semantic", "locative"):
+                if r[k]:
+                    e[k] = r[k]
+            if e["semantic"] in ("kin", "person") and not e.get("person"):
+                e["person"] = "3"
+            if r.get("source") and r["source"] not in e.get("source", ""):
+                e["source"] = "+".join(filter(None, (e.get("source", ""), r["source"])))
+        have = [v for v in e.get("variants", "").split("/") if v]
+        e["variants"] = "/".join(have + [v for v in r["variants"].split("/") if v and v not in have])
+        if r.get("written"):
+            written[w] = r["written"]
+    return written
 
 
 class Lexicon:
-    """The three tables, ready for the rules."""
+    """The tables, ready for the rules. extra_rows / tense_rows: lexicon_extra.csv and verb_tenses.csv (normalised);
+    None takes them from tables.py."""
 
-    def __init__(self, lexicon_rows, verb_rows_, predicate_rows_):
+    def __init__(self, lexicon_rows, verb_rows_, predicate_rows_, extra_rows_=None, tense_rows=None):
         self.entries = {r["word"]: r for r in lexicon_rows}
+        self.written = _merge_extra(self.entries, normalise_rows(extra_rows()) if extra_rows_ is None else extra_rows_)
         self.verbs = {}
         for r in verb_rows_:
             self.verbs.setdefault(r["verb"], {})[r["person"]] = {t: r[t] for t in T.TENSES}
+        for r in normalise_rows(verb_tense_rows()) if tense_rows is None else tense_rows:
+            forms = self.verbs.get(r["verb"], {}).get(r["person"])
+            if forms is not None:
+                forms.update({t: r[t] for t in T.EXTRA_TENSES if r.get(t)})
         self.predicates = {r["word"]: r for r in predicate_rows_}
         self.surface = {}  # any accepted spelling -> (headword, how)
         for w in self.entries:
@@ -249,7 +312,11 @@ class Lexicon:
 
     @classmethod
     def from_files(cls, paths):
-        return cls(read_csv(paths["lexicon"]), read_csv(paths["verbs"]), read_csv(paths["predicates"]))
+        """lexicon_extra / verb_tenses are read when paths has them and the files exist, else taken from tables.py."""
+        def optional(key):
+            return read_csv(paths[key]) if key in paths and Path(paths[key]).exists() else None
+        return cls(read_csv(paths["lexicon"]), read_csv(paths["verbs"]), read_csv(paths["predicates"]),
+                   optional("lexicon_extra"), optional("verb_tenses"))
 
     def get(self, word):
         return self.entries.get(word)

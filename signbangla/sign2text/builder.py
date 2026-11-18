@@ -15,11 +15,22 @@ The rules run in this order; each one only changes what it is about and records 
     j. greetings and fixed phrases stay as they are
     k. statements end with "।"
 Words are never invented: the only words added are verb endings, copula forms and predicate phrases from the tables.
+
+With rules counted from sentence pairs (corpus_rules.py, module3.corpus in the config; used when the file exists):
+    a. two or more kin signs said as one word (চাচা বউ -> চাচী); time-of-day words before a verb take the locative
+       (সকাল -> সকালে; this one needs no corpus rules)
+    c. a final marker sets tense and negation: হবে future, ছিল past perfect, হয়েছে present perfect, নেই past
+       negative (খায়নি), না present negative, আগে ... ছিল / না habitual past (খেতেন / খেতেন না); a plain না
+       with a time word (গতকাল) keeps rule h
+    d. no verb sign but a marker: the verb is taken from the object (চা -> খাওয়া); a kin subject takes the person
+       form most common for it with that tense (বাবা ... খান না, বাবা ... খায়নি)
+    h. the marker signs themselves (ছিল, হবে, আগে, না, নেই) are not written; না / নি come back as the verb ending
 """
 from dataclasses import dataclass, field
 from pathlib import Path
 
 from ..utils import ROOT, load_config
+from . import corpus_rules as CR
 from .lexicon import Lexicon, norm, write_missing
 from .tables import COPULA
 
@@ -41,7 +52,13 @@ class Token:
 
 def module3_paths(cfg, root=ROOT):
     m = cfg["module3"]
-    return {k: root / m[k] for k in ("lexicon", "verbs", "predicates", "test_sentences")}
+    return {k: root / m[k] for k in ("lexicon", "verbs", "predicates", "test_sentences", "lexicon_extra", "verb_tenses")
+            if k in m}
+
+
+def corpus_rules_path(cfg, root=ROOT):
+    c = cfg["module3"].get("corpus") or {}
+    return root / c["rules"] if c.get("rules") else None
 
 
 def lexicon_sources(cfg, root=ROOT):
@@ -55,9 +72,11 @@ def lexicon_sources(cfg, root=ROOT):
 
 
 class SentenceBuilder:
-    def __init__(self, lexicon, settings):
+    def __init__(self, lexicon, settings, corpus=None):
+        """corpus: a corpus_rules.CorpusRules, or None for the hand-written rules only."""
         self.lx = lexicon
         self.s = settings
+        self.corpus = corpus
         self.past_words = {norm(w) for w in settings["past_words"]}
         self.future_words = {norm(w) for w in settings["future_words"]}
         self.continuous_words = {norm(w) for w in settings["continuous_words"]}
@@ -65,15 +84,59 @@ class SentenceBuilder:
         self.possessive_subject_words = {norm(w) for w in settings["possessive_subject_words"]}
 
     @classmethod
-    def from_config(cls, cfg=None, root=ROOT, write=True):
-        """From configs/config.yaml -> module3. write: create missing data files from tables.py first."""
+    def from_config(cls, cfg=None, root=ROOT, write=True, corpus=True):
+        """From configs/config.yaml -> module3. write: create missing data files from tables.py first. corpus: use the
+        rules in module3.corpus.rules when module3.corpus.use is true and the file exists."""
         cfg = cfg or load_config()
         paths = module3_paths(cfg, root)
         if write:
             write_missing(paths, lexicon_sources(cfg, root))
-        return cls(Lexicon.from_files(paths), cfg["module3"])
+        rules = None
+        path = corpus_rules_path(cfg, root)
+        if corpus and (cfg["module3"].get("corpus") or {}).get("use") and path is not None and path.exists():
+            rules = CR.CorpusRules(CR.load(path))
+        return cls(Lexicon.from_files(paths), cfg["module3"], rules)
+
+    def _token(self, word):
+        e = self.lx.get(word)
+        return Token(self.lx.written.get(word, word), word, e["pos"], e["semantic"], e["person"], e["possessive"],
+                     e["locative"])
 
     # ------------------------------------------------------------ a. normalise
+    def apply_compounds(self, tokens, trace, compounds=None):
+        """Two or more signs that the corpus rules say are one word (চাচা বউ -> চাচী). compounds: {(words): rule};
+        default the builder's corpus rules."""
+        comp = compounds if compounds is not None else (self.corpus.compounds if self.corpus else {})
+        if not comp:
+            return tokens
+        longest = max(len(k) for k in comp)
+        out, i = [], 0
+        while i < len(tokens):
+            for n in range(min(longest, len(tokens) - i), 1, -1):
+                key = tuple(t.word for t in tokens[i:i + n])
+                rule = comp.get(key)
+                if rule and self.lx.get(rule["word"]):
+                    out.append(self._token(rule["word"]))
+                    trace.append(f"a. compound {' '.join(key)} -> {rule['word']} "
+                                 f"(train {rule['support']}/{rule['of']})")
+                    i += n
+                    break
+            else:
+                out.append(tokens[i])
+                i += 1
+        return out
+
+    def time_locatives(self, tokens, verb, trace):
+        """Time-of-day words in a sentence with a verb take their locative form (সকাল -> সকালে)."""
+        if verb is None:
+            return
+        for t in tokens:
+            if t.semantic == "time_of_day" and t.locative and t.text == t.word:
+                rule = self.corpus.time_locative.get(t.word) if self.corpus else None
+                t.text = t.locative
+                trace.append(f"e. time of day: {t.word} -> {t.locative}"
+                             + (f" (train {rule['support']}/{rule['of']})" if rule else ""))
+
     def normalise(self, words, trace, unknown):
         raw = norm(" ".join(words) if isinstance(words, (list, tuple)) else str(words)).split()
         tokens, i = [], 0
@@ -83,9 +146,7 @@ class SentenceBuilder:
                 hit = self.lx.surface.get(phrase)
                 if hit:
                     word, how = hit
-                    e = self.lx.get(word)
-                    tokens.append(Token(word, word, e["pos"], e["semantic"], e["person"], e["possessive"],
-                                        e["locative"]))
+                    tokens.append(self._token(word))
                     if phrase != word:
                         trace.append(f"a. {phrase} -> {word} ({how})")
                     i += n
@@ -95,7 +156,7 @@ class SentenceBuilder:
                 unknown.append(raw[i])
                 trace.append(f"a. unknown word {raw[i]}: kept as it is")
                 i += 1
-        return tokens
+        return self.apply_compounds(tokens, trace) if self.corpus else tokens
 
     # ------------------------------------------------------------ b. subject
     def subject(self, tokens, trace):
@@ -245,6 +306,80 @@ class SentenceBuilder:
             return True
         return False
 
+    # ------------------------------------------------------------ corpus rules: markers, dropped verb, person
+    def corpus_marker(self, tokens, tense):
+        """-> (key, rule) for a sentence ending in a marker the corpus rules know, else None. A plain final না with a
+        time word that already sets the tense is left to rule h."""
+        if not self.corpus:
+            return None
+        key = CR.marker_key(tokens)
+        rule = self.corpus.markers.get(key) if key else None
+        if rule is None:
+            return None
+        if key == (norm("না"), False, False) and tense != "present_simple":
+            return None
+        return key, rule
+
+    def infer_verb(self, tokens, trace):
+        """No verb sign: the verb that goes with the object (by word, else by its semantic), placed after it."""
+        if any(self.lx.predicates.get(t.word) for t in tokens):
+            return None
+        for obj in reversed([t for t in tokens if t.pos == "noun" and t.semantic not in ("kin", "person")]):
+            rule, how = self.corpus.verb_by_object.get(obj.word), obj.word
+            if rule is None and obj.semantic:
+                rule, how = self.corpus.verb_by_semantic.get(obj.semantic), f"{obj.semantic} words"
+            if rule and rule["verb"] in self.lx.verbs and self.lx.get(rule["verb"]):
+                verb = self._token(rule["verb"])
+                verb.inserted = True
+                tokens.insert(tokens.index(obj) + 1, verb)
+                trace.append(f"d. no verb sign: {rule['verb']} added after {obj.word} (verb for {how}; train "
+                             f"{rule['support']}/{rule['of']})")
+                return verb
+        return None
+
+    def corpus_person(self, subject, person, column, neg, trace):
+        """The person column for a kin subject: the most common one in train for (subject, tense, negation), else for
+        (tense, negation) over all kin subjects; otherwise unchanged."""
+        if not self.corpus or subject is None or subject.semantic != "kin":
+            return person
+        rule = self.corpus.person_by_subject.get((subject.word, column, neg))
+        how = subject.word
+        if rule is None:
+            rule, how = self.corpus.person_by_tense.get((column, neg)), "kin subjects"
+        if rule is None or rule["person"] == person:
+            return person
+        trace.append(f"d. person for {subject.word} with {column}{'+' + neg if neg else ''}: {rule['person']} "
+                     f"(most common for {how}; train {rule['support']}/{rule['of']})")
+        return rule["person"]
+
+    def apply_marker(self, tokens, verb, subject, person, key, rule, trace, at=None):
+        """Tense and negation from the marker; the marker signs are taken out. -> False if the verb has no such form.
+        at: where in the trace the marker line goes (before the line of an added verb)."""
+        column, neg = rule["tense"], rule["neg"]
+        forms = self.lx.verbs.get(verb.word, {})
+        person_trace = []
+        person = self.corpus_person(subject, person, column, neg, person_trace)
+        base = forms.get(person, {}).get("present_simple" if neg == CR.NEG_NI else column)
+        if not base:
+            return False
+        trace.insert(len(trace) if at is None else at, f"c. marker {CR.describe_marker(key)}: {column}"
+                     + {CR.NEG_NA: " + না", CR.NEG_NI: " negative (+নি)"}.get(neg, "")
+                     + f" (train {rule['support']}/{rule['of']})")
+        trace.extend(person_trace)
+        verb.text = base + "নি" if neg == CR.NEG_NI else base
+        trace.append(f"d. verb {verb.word} -> {verb.text} (person {person}, {column})")
+        removed = [tokens[-1]]
+        if key[2]:
+            removed.append(tokens[-2])
+        removed += [t for t in tokens[:-1] if t.word == norm("আগে")]
+        for t in removed:
+            tokens.remove(t)
+        trace.append("h. marker signs not written: " + ", ".join(t.word for t in removed))
+        if neg == CR.NEG_NA:
+            tokens.insert(tokens.index(verb) + 1, Token("না", "না", "negation", inserted=True))
+            trace.append(f"h. negation: না after {verb.text}")
+        return True
+
     # ------------------------------------------------------------ the whole sentence
     def build(self, words, is_question=False):
         trace, unknown = [], []
@@ -262,8 +397,19 @@ class SentenceBuilder:
         tense = self.tense(tokens, trace)
         negations = [t for t in tokens if t.pos == "negation"]
         verb = self.main_verb(tokens, trace)
-        if verb is not None:
+        marker = self.corpus_marker(tokens, tense)
+        at = len(trace)
+        if verb is None and marker is not None:
+            verb = self.infer_verb(tokens, trace)
+        if verb is not None and marker is not None and self.apply_marker(tokens, verb, subject, person, *marker,
+                                                                         trace, at):
+            negations = []
+        elif verb is not None:
+            column = self._tense_column(tense)
+            neg = (CR.NEG_NI if tense == "past" else CR.NEG_NA) if negations else CR.NEG_NONE
+            person = self.corpus_person(subject, person, column, neg, trace)
             self.agree(verb, person, tense, trace)
+        self.time_locatives(tokens, verb, trace)
         self.places(tokens, verb, {subject, owner}, trace)
         new_subject = self.possession(tokens, verb, subject, owner, trace)
         if subject is not None and new_subject is None:

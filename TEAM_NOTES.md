@@ -102,6 +102,44 @@ which is git-ignored.
 - Shared file changed: `configs/config.yaml` gets `speech2sign.bdsl300`. No existing keypoint file, BdSLW401 work or
   sign dictionary was changed.
 
+## Ban-Sign-Sent-9K and DU dynamic signs (Module 2, 18 Nov)
+
+Two more sources, for words our sentences need (negation, tense markers, greetings). Code in
+`signbangla/extra_sources/`, scripts 46-49, tests `tests/test_extra_sources.py`.
+
+**Sources and credit:**
+- **Ban-Sign-Sent-9K** (`banglagov/Ban-Sign-Sent-9K-V1` on Hugging Face): 1,922 sign sentences with natural Bangla,
+  9,610 videos by 5 signers (U4, U5, U6, U7, U19).
+- **DU dynamic BdSL** (Kaggle `hassan0008jhh/dataset-bangla-sign-language`, folder `dynamic_dataset`): 40 word and
+  phrase classes. We use 14 of them.
+
+**Licence: neither source states one.** Treat both as research use only and never redistribute their videos,
+keypoints or anything made from them. Credit both if they are used in a report. Everything stays under `work/` and
+`data/`, which are not in git.
+
+- `scripts/46_bansign9k_sentences.py`: the xlsx -> `data/bansign9k/sentences.csv`, vocabulary and typos (the source is
+  never changed), and a Module 3 evaluation.
+  - The xlsx's "Test Data Set" sheet has signers' names and e-mails in `metas`. That column is never read or copied.
+- `scripts/47_dynamic_du.py`: downloads only the 14 classes in `dynamic_du.classes` by byte range, extracts keypoints
+  and writes `work/dynamic_du/class_table.csv` (`needs_check = true`). Its `dataset_numpy` folder is hands-only
+  arrays, not our 67-point format, so it is not used.
+- `scripts/47b_dynamic_du_previews.py`: one skeleton video (6 clips) and one contact sheet (24 clips) per class in
+  `work/core_vocab_check/dynamic_du/`, from the existing keypoints only. New config keys `dynamic_du.preview_*`.
+- `scripts/48_bansign9k_videos.py`: the split zip (z01-z09 + .zip, about 20.5 GB), resumable with SHA-256 checks.
+  - Stops if less than 60 GB is free.
+  - Not needed for the current results: `scripts/49` fetches its subset by byte range.
+- `scripts/49_bansign9k_last_sign.py`: about 800 videos with the signers balanced.
+  - Cuts the final sign (না, নেই, ছিল, হবে, হয়েছে) by DTW against the same signer's video differing only in the
+    last word, falling back to the motion cut. Clips under 0.3 s or over 2.5 s are dropped.
+  - Writes `cuts.csv`, `word_quality.csv` and previews in `work/core_vocab_check/bansign9k/`.
+  - 335 of the 800 videos say 1000 fps in the file (2 say 62.5) but have 30 fps worth of frames. The cut uses
+    `bansign9k.fallback_fps` (30) for any rate outside `bansign9k.fps_range`.
+  - Result: 794 of 800 clips kept, balanced over the 5 signers.
+- New words are added to `data/core_vocab/word_list.csv` with `source BanSign9K` / `DynamicDU` and
+  `verified = false`; না and নেই have category `negation`. Nothing is switched on.
+- Shared files changed: `configs/config.yaml` (`bansign9k` and `dynamic_du` sections) and
+  `data/core_vocab/word_list.csv` (rows added only).
+
 ## Module 3: sentence builder (18 Nov)
 
 New package `signbangla/sign2text/` turns Module 1's sign words (dictionary forms, BdSL order) into a Bangla sentence
@@ -120,6 +158,25 @@ with rules: `build_sentence(words, is_question=False)` and `build_from_candidate
   and gives the same predictions as the module-1 code, so no model code was copied). Sign segmentation thresholds are
   in `module3.screen.segment`, tuned on 60 recorded BdSLW60 videos (sign count exact on 73%, within one on 90%). Speak
   needs `signbangla/sign2speech` from the texttovoice branch.
+- Rules from Ban-Sign-Sent-9K (18 Nov): `scripts/53_bansign9k_module3.py` splits the 1,922 sentence pairs (train /
+  dev / test 70/15/15 by subject + food, `data/bansign9k/splits.csv`) and counts rules from train only
+  (`data/module3/corpus_rules.json`). The rules cover:
+  - kin compounds
+  - the dropped verb খাওয়া
+  - tense / negation from the final marker
+  - the kin-subject person form
+  - time-of-day locatives
+
+  Dev 94.2% exact (ceiling 94.6%), test 90.9% (ceiling 91.2%, run once); the old 50 sentences stay at 47/50. New
+  data files, all `verified = false`:
+  - `data/module3/lexicon_extra.csv` (new words and spellings)
+  - `data/module3/verb_tenses.csv` (present perfect খেয়েছে, habitual past খেতেন)
+
+  **Please check both files.** The honorific choice (খান না but খায়নি for the same subject) is this dataset's style,
+  not a grammar rule. Ban-Sign-Sent-9K (banglagov, Hugging Face) states no licence: research use only, never
+  redistribute.
+- Shared file changed: `configs/config.yaml` gets `module3.lexicon_extra`, `module3.verb_tenses` and
+  `module3.corpus`. Tests: `tests/test_sentence_corpus.py`. All 202 tests pass.
 
 ## What you need to do
 
