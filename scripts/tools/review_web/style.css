@@ -1,0 +1,158 @@
+@font-face {
+  font-family: "Noto Sans Bengali Local";
+  src: url("/font.ttf") format("truetype");
+}
+
+:root {
+  --bg: #f6f6f4;
+  --panel: #ffffff;
+  --text: #1d1d1b;
+  --muted: #6b6b66;
+  --line: #deded8;
+  --accent: #2f6fde;
+  --correct: #1f8a4c;
+  --wrong: #c43c32;
+  --unsure: #b7791f;
+  --warn-bg: #fff4e0;
+  --warn-text: #7a4a00;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #171716;
+    --panel: #22221f;
+    --text: #ecece8;
+    --muted: #a3a39c;
+    --line: #3a3a35;
+    --accent: #6c9cf0;
+    --correct: #4cbb7a;
+    --wrong: #e7766b;
+    --unsure: #e0a94f;
+    --warn-bg: #3a2c12;
+    --warn-text: #f3cf8f;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.bn, .bangla, td.bn { font-family: "Noto Sans Bengali Local", "Noto Sans Bengali", sans-serif; }
+
+header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+
+.progress { height: 6px; background: var(--line); }
+#bar { height: 100%; width: 0; background: var(--correct); transition: width .2s; }
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  align-items: center;
+  padding: 10px 16px;
+}
+.toolbar label { color: var(--muted); }
+#position { margin-left: auto; color: var(--muted); }
+
+select, input, button {
+  font: inherit;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 5px 9px;
+}
+button { cursor: pointer; }
+button:hover { border-color: var(--accent); }
+kbd {
+  font: 12px ui-monospace, monospace;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  padding: 0 4px;
+  opacity: .7;
+}
+
+main {
+  display: grid;
+  grid-template-columns: minmax(300px, 420px) 1fr;
+  gap: 20px;
+  padding: 16px;
+  max-width: 1500px;
+  margin: 0 auto;
+}
+@media (max-width: 860px) { main { grid-template-columns: 1fr; } }
+
+.info, .media {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 16px;
+  min-width: 0;
+}
+
+.group { color: var(--muted); font-size: 13px; }
+.bangla { font-size: 64px; line-height: 1.25; margin: 4px 0 0; word-break: break-word; }
+.english { font-size: 20px; color: var(--muted); margin-bottom: 8px; }
+
+.status { display: inline-block; font-weight: 600; border-radius: 999px; padding: 2px 10px; font-size: 13px;
+  border: 1px solid var(--line); }
+.status.correct { color: var(--correct); border-color: var(--correct); }
+.status.wrong { color: var(--wrong); border-color: var(--wrong); }
+.status.unsure { color: var(--unsure); border-color: var(--unsure); }
+
+.facts { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin: 14px 0; }
+.facts dt { color: var(--muted); }
+.facts dd { margin: 0; word-break: break-word; }
+
+.warning {
+  background: var(--warn-bg);
+  color: var(--warn-text);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin: 8px 0;
+}
+
+.edit { display: grid; gap: 8px; margin: 14px 0; }
+.edit label { display: grid; gap: 3px; color: var(--muted); font-size: 13px; }
+.edit input { color: var(--text); font-size: 16px; }
+.edit input.bn { font-size: 22px; }
+
+.buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.buttons button { padding: 10px 6px; font-weight: 600; }
+button.correct { color: var(--correct); border-color: var(--correct); }
+button.wrong { color: var(--wrong); border-color: var(--wrong); }
+button.unsure { color: var(--unsure); border-color: var(--unsure); }
+
+.reason { margin-top: 8px; }
+.reason input { width: 100%; }
+
+.nav { display: flex; justify-content: space-between; margin-top: 14px; }
+.message { min-height: 1.4em; margin-top: 10px; color: var(--muted); font-size: 13px; }
+.message.error { color: var(--wrong); }
+
+.media video { width: 100%; max-height: 62vh; background: #fff; border-radius: 6px; display: block; }
+.sheet-title { color: var(--muted); margin: 14px 0 6px; font-size: 13px; }
+.media img { max-width: 100%; border: 1px solid var(--line); border-radius: 6px; background: #fff; display: block; }
+
+.none { color: var(--muted); padding: 30px; text-align: center; }
+
+dialog {
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  max-width: min(720px, 94vw);
+}
+dialog table { border-collapse: collapse; width: 100%; margin-bottom: 12px; }
+dialog th, dialog td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--line); }

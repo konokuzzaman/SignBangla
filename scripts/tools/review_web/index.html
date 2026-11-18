@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign word review</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div class="progress"><div id="bar"></div></div>
+  <div class="toolbar">
+    <span id="progress-text">loading ...</span>
+    <label>Status
+      <select id="f-status">
+        <option value="all">all</option>
+        <option value="unreviewed">unreviewed</option>
+        <option value="correct">correct</option>
+        <option value="wrong">wrong</option>
+        <option value="unsure">not sure</option>
+      </select>
+    </label>
+    <label>Category <select id="f-category"><option value="all">all</option></select></label>
+    <label>Group <select id="f-group"><option value="all">all</option></select></label>
+    <span id="position"></span>
+    <button id="show-no-clips" type="button">No clips yet (<span id="no-clips-count">0</span>)</button>
+  </div>
+</header>
+
+<main id="main">
+  <section class="info">
+    <div class="group" id="group"></div>
+    <div class="bangla" id="bangla"></div>
+    <div class="english" id="english"></div>
+    <div id="status" class="status"></div>
+    <dl class="facts">
+      <dt>ID</dt><dd id="wid"></dd>
+      <dt>Source</dt><dd id="source"></dd>
+      <dt>Folder</dt><dd id="folder"></dd>
+      <dt>Category</dt><dd id="category"></dd>
+      <dt>Good clips</dt><dd id="clips"></dd>
+      <dt>Signers</dt><dd id="signers"></dd>
+      <dt>Consistency</dt><dd id="consistency"></dd>
+    </dl>
+    <div id="warnings"></div>
+
+    <div class="edit">
+      <label>Bangla <input id="edit-bangla" class="bn" autocomplete="off"></label>
+      <label>English <input id="edit-english" autocomplete="off"></label>
+    </div>
+
+    <div class="buttons">
+      <button id="b-correct" class="correct" type="button">Correct <kbd>Y</kbd></button>
+      <button id="b-wrong" class="wrong" type="button">Wrong <kbd>N</kbd></button>
+      <button id="b-unsure" class="unsure" type="button">Not sure <kbd>S</kbd></button>
+    </div>
+    <div id="reason-box" class="reason" hidden>
+      <input id="reason" placeholder="Reason (optional), Enter to save, Esc to cancel" autocomplete="off">
+    </div>
+    <div class="nav">
+      <button id="b-back" type="button">&larr; Back</button>
+      <button id="b-next" type="button">Next &rarr;</button>
+    </div>
+    <div id="message" class="message"></div>
+  </section>
+
+  <section class="media">
+    <video id="video" autoplay loop muted playsinline controls></video>
+    <div id="no-video" class="none" hidden>No preview video</div>
+    <div class="sheet-title" id="sheet-title"></div>
+    <a id="sheet-link" target="_blank" rel="noopener"><img id="sheet" alt="contact sheet"></a>
+  </section>
+</main>
+
+<div id="empty" class="none" hidden>No words match the filter.</div>
+
+<dialog id="no-clips">
+  <h2>No clips yet</h2>
+  <p>These words have no sign clips, so they cannot be checked here.</p>
+  <table><thead><tr><th>ID</th><th>Bangla</th><th>English</th><th>Source</th><th>Category</th></tr></thead>
+  <tbody id="no-clips-body"></tbody></table>
+  <form method="dialog"><button>Close</button></form>
+</dialog>
+
+<script src="app.js"></script>
+</body>
+</html>

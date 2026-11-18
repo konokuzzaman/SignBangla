@@ -333,3 +333,18 @@ dynamic_du:                             # Dhaka University dynamic BdSL videos (
   preview_fps: 30
   preview_clips: 6                      # clips per class in the preview video
   preview_length: 0.5                   # only clips within this share of the class's median length are shown
+review_words:                           # scripts/tools/review_words.py: local page to check the new sign words
+  backup_dir: "data/core_vocab/backup"  # word_list.csv is copied here before the first change of a session
+  log: "data/core_vocab/review_log.csv" # one line per decision
+  web_dir: "scripts/tools/review_web"
+  host: "127.0.0.1"                     # local only
+  port: 8790
+  port_tries: 10                        # port busy: try the next ones
+  open_browser: true
+  consistency: "core_vocab_check/consistency.csv"  # inside work_dir; computed once, delete it to compute again
+  consistency_clips: 8                  # clips per word, spread over the signers
+  consistency_frames: 32                # every clip resampled to this many frames
+  hand_shape_weight: 0.5                # weight of the hand shape against the arm path
+  warn_ratio: 0.85                      # warning when within-word distance / distance to other words is above this
+  warn_nearest: 0.0                     # ... or when at most this share of its clips has a clip of the same word as
+                                        # nearest (0 = none; BdSL-300 has 204 words, so chance is 0.5%)

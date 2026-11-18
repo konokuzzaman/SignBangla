@@ -381,6 +381,11 @@ python scripts\48_bansign9k_videos.py               # optional: the whole split 
 New words go to `data/core_vocab/word_list.csv` with `verified = false`. Settings: `bansign9k`, `dynamic_du`. Tests:
 `tests/test_extra_sources.py`.
 
+To check them, `python scripts\tools\review_words.py` opens a local review page (127.0.0.1:8790): preview video,
+contact sheet, clip counts and a consistency score per word; keys Y (correct), N (wrong), S (not sure), arrows to move.
+Each answer changes only that word's row (backup in `data/core_vocab/backup/` first, log in
+`data/core_vocab/review_log.csv`). Settings: `review_words`. Tests: `tests/test_review_words.py`.
+
 ## Module 3: Sign Words to a Bangla Sentence
 
 BdSL is signed mostly in subject-object-verb order without verb endings, case endings or small function words, so

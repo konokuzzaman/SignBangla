@@ -125,6 +125,11 @@ keypoints or anything made from them. Credit both if they are used in a report. 
   arrays, not our 67-point format, so it is not used.
 - `scripts/47b_dynamic_du_previews.py`: one skeleton video (6 clips) and one contact sheet (24 clips) per class in
   `work/core_vocab_check/dynamic_du/`, from the existing keypoints only. New config keys `dynamic_du.preview_*`.
+- `scripts/tools/review_words.py` + `scripts/tools/review_web/`: local page to verify the new words. It writes only
+  the `verified` / `bangla` / `english` cells of the answered row of `data/core_vocab/word_list.csv` (shared file),
+  backup first, and logs to `data/core_vocab/review_log.csv`. Consistency cache:
+  `work/core_vocab_check/consistency.csv`. New config section `review_words`.
+- Word list fix (18 Nov): B225 (`noy`) is নয় = nine, not negation: english "nine", core_id C035 removed.
 - `scripts/48_bansign9k_videos.py`: the split zip (z01-z09 + .zip, about 20.5 GB), resumable with SHA-256 checks.
   - Stops if less than 60 GB is free.
   - Not needed for the current results: `scripts/49` fetches its subset by byte range.
