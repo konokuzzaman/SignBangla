@@ -466,6 +466,93 @@ Settings: `module3.screen`. Tests: `tests/test_sentence_screen.py`.
 
 ---
 
+## SignBangla app
+
+One local page with both directions: **Sign → Text** on the left, **Speech → Sign** on the right, and the conversation
+history with timings at the bottom. Everything is loaded once at start-up.
+
+```powershell
+python scripts\60_signbangla_app.py            # opens http://127.0.0.1:8800/
+python scripts\60_signbangla_app.py --no-asr   # typed text only (no speech model, starts in under a second)
+```
+
+**Speech → Sign (phase 1):**
+- **Input:** hold the button (or the space bar) and speak, or type a sentence.
+- **Text → sign words** (`signbangla/app/gloss.py`):
+  - cleanup, synonyms and verb forms from `text_processing.py`
+  - "<noun> করা" verbs are read as one verb (পান করা → খাওয়া)
+  - filler words and the copula are dropped
+  - time words go first and question words last
+  - only verified signs, plus BdSLW60 and BdSLW401, are used; other words stay red in the caption
+- **Animation:** the existing stitching and the head shake / tilt of `nonmanual.py`, sent as one sequence that both
+  views play from one clock:
+  - **3D:** the studio3d mannequin with a straight-on orthographic camera
+  - **Skeleton:** a 2D canvas
+  - switching views, Replay and the 0.5x / 1x speeds need no new request
+- **Missing parts:** a missing microphone or speech model only switches that part off, with a message on the page.
+
+**Sign → Text (phase 2):**
+- **Camera:** OpenCV + MediaPipe Holistic with the dataset settings, 640x480. The picture with the skeleton is
+  streamed to the page, with a "signing … / ready" indicator.
+- **Signs:** the stream is cut into signs (a short pause of 0.4 s ends one; very short movements are ignored).
+  Module 1's model (`app.sign.checkpoint`, now the 401-word BiGRU) gives the top 5 of each sign. The top word is added,
+  and a click on another top-5 word replaces it.
+- **Sentence:** rebuilt after every word with the Module 3 builder (corpus rules on).
+- **Ending a sentence:** hands down for 1.5 s, or **Done**. The sentence is then spoken with the Bangla voice
+  (`signbangla/sign2speech`, cached) and added to the history.
+- **Other buttons:** Undo, Clear, Question, and searchable word buttons to add words by hand.
+- `--camera N` picks another camera; `--no-camera` uses the word buttons only.
+- The voice needs `pip install -r requirements-speech.txt` (edge-tts) and an internet connection the first time a
+  sentence is spoken.
+
+**Phase 3: markers, test sentences and context prediction:**
+- **Tense and negation signs:** spoken verb forms become verb + marker sign (the reverse of Module 3's corpus rules):
+  - খাইনি → খাওয়া নেই
+  - খেয়েছিল → খাওয়া ছিল
+  - খেয়েছে → খাওয়া হয়েছে
+  - a separate না stays its own sign
+
+  Only verified markers are used. হবে is not verified, so future sentences keep the plain verb and the time word.
+- **Fingerspelling:** not available. Only the BDSL49 digits have keypoints, not the letters, so unknown words stay
+  red.
+- **Test sentences** (header button): coverage of `data/app/test_sentences.csv` (a `sentence` column), saved to
+  `work/app/coverage.csv`. Click a sentence to sign it.
+- **Context prediction** (`signbangla/app/predict.py`): an unclear camera sign (top-1 below 0.5) is re-scored with the
+  other words of the sentence (before and after), and re-scored again after every new word.
+  - The suggestion is shown in orange with keep, undo and the next best words.
+  - Two unclear neighbours, or a low score, give "…" instead of a guess.
+  - না / নেই / question words are never added or removed.
+  - Every prediction is logged to `work/app/predictions.csv`.
+  - Model `app.predict.model`:
+    - `ngram` (default): word pairs and triples from our own sentences
+    - `mlm`: the BanglaBERT generator, offline after one download
+- **Evaluation** (`scripts/61_app_prediction_eval.py`): on the 274 Ban-Sign-Sent-9K test sentences (unseen by the
+  n-gram model, but in the same style), each word is hidden in turn:
+
+  | Model | Top-1 | Top-3 | Time per gap |
+  |---|---:|---:|---:|
+  | n-gram | 29.9% | 42.4% | 2.6 ms |
+  | fill-mask | 1.2% | 12.6% | 93 ms |
+
+  On recorded BdSLW401 clips of the hidden words (held-out signers), the recogniser's own top-1 is 66.8%; re-ranked
+  with the context it is 83.7% (fill-mask: 56.5%). Results in `work/app/prediction_eval.csv`.
+
+  On the 42 everyday sentences of `data/app/test_sentences.csv`, the n-gram model gets 42.1% top-1 and 50.5% top-3
+  (fill-mask 16.8% / 35.8%). 13 of these sentences are also in its training data (Module 3 tests, DU phrases):
+  - unseen sentences only: 28.4% / 37.8%
+  - seen sentences: 90.5% / 95.2%
+- **Coverage on these 42 sentences:** 27 can be fully signed (mean 88.9% of words). The missing words are in
+  `work/app/coverage.csv`.
+- **Voice cache:** `scripts/62_app_precache_voice.py` speaks the common demo sentences once (needs edge-tts and
+  internet).
+- **Camera framing:** the page shows a framing hint compared with the training videos (shoulders about 0.26 of the
+  picture width, centred, picture not mirrored). `app.sign.flip_input` corrects a mirroring camera.
+
+Settings: `app` in `configs/config.yaml`. Tests: `tests/test_app.py`, `tests/test_app_sign.py`,
+`tests/test_app_predict.py`.
+
+---
+
 ## Synthetic Self-Test Suite
 
 To guarantee pipeline integrity across any machine without needing the full 25GB dataset, we built a comprehensive synthetic test suite:

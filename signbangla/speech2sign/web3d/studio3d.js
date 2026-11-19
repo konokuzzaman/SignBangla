@@ -2,13 +2,21 @@
 // /settings.json: camera, floor and colours (speech2sign.studio3d in configs/config.yaml)
 // /sequence.json: { version, fps, frames: [T][67][3] (x right, y up, z towards the camera), word: [T], tokens }
 // /version:       { version } - checked every poll_ms, a new version is loaded and played by itself
+// Embed mode (viewer3d.html?embed, used by the SignBangla app): no polling, caption or replay button; the parent page
+// sends {type: 'load', data} with the sequence and {type: 'frame', i} for every frame, so one clock drives all views.
+// camera.type 'orthographic' (app.viewer3d.camera): the straight-on camera of scripts/experiments/studio3d/scene.html.
 import * as THREE from 'three';
 
 const settings = await (await fetch('/settings.json')).json();
 const C = settings.colors;
+const EMBED = new URLSearchParams(location.search).has('embed');
 const stage = document.getElementById('stage');
 const caption = document.getElementById('caption');
 const replay = document.getElementById('replay');
+if (EMBED) {
+  caption.style.display = 'none';
+  replay.style.display = 'none';
+}
 
 const root = document.documentElement.style;
 for (const [name, key] of [['--background', 'background'], ['--caption-background', 'caption_background'],
@@ -31,8 +39,10 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(C.background);
 scene.fog = new THREE.Fog(C.background, 14, 24);
 const cam = settings.camera;
-const camera = new THREE.PerspectiveCamera(cam.fov, 1, 0.1, 60);
-const target = new THREE.Vector3(...cam.target);
+const ORTHO = cam.type === 'orthographic';
+const camera = ORTHO ? new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 60)
+  : new THREE.PerspectiveCamera(cam.fov, 1, 0.1, 60);
+const target = new THREE.Vector3(...(cam.target || [0, cam.center_y || 0, 0]));
 
 scene.add(new THREE.HemisphereLight(0xffffff, 0xb9c2d0, 1.5));
 const sun = new THREE.DirectionalLight(0xffffff, 2.2);
@@ -279,11 +289,19 @@ function resize() {
   const width = window.innerWidth, height = Math.max(1, window.innerHeight - caption.offsetHeight);
   stage.style.height = height + 'px';
   renderer.setSize(width, height);
-  camera.aspect = width / height;
-  const halfTan = Math.tan(THREE.MathUtils.degToRad(cam.fov / 2));
-  const distance = Math.max(cam.distance, cam.min_half_width / (halfTan * camera.aspect));
-  camera.position.set(target.x, target.y + cam.height, target.z + distance);
-  camera.lookAt(target);
+  if (ORTHO) {
+    const aspect = width / height, h = Math.max(cam.half_height, cam.min_half_width / aspect);
+    Object.assign(camera, { left: -h * aspect, right: h * aspect, top: h, bottom: -h });
+    const tilt = THREE.MathUtils.degToRad(cam.tilt_deg);
+    camera.position.set(0, cam.center_y + Math.sin(tilt) * cam.distance, Math.cos(tilt) * cam.distance);
+    camera.lookAt(0, cam.center_y, 0);
+  } else {
+    camera.aspect = width / height;
+    const halfTan = Math.tan(THREE.MathUtils.degToRad(cam.fov / 2));
+    const distance = Math.max(cam.distance, cam.min_half_width / (halfTan * camera.aspect));
+    camera.position.set(target.x, target.y + cam.height, target.z + distance);
+    camera.lookAt(target);
+  }
   camera.updateProjectionMatrix();
   renderer.render(scene, camera);
 }
@@ -340,5 +358,25 @@ async function poll() {
 
 await document.fonts.load(`${settings.caption_font_size}px "SignBangla Bengali"`, 'বাবা').catch(() => {});
 resize();
-poll();
-requestAnimationFrame(tick);
+if (EMBED) {
+  window.addEventListener('message', (e) => {
+    if (e.origin !== location.origin || !e.data) return;
+    if (e.data.type === 'load') {
+      load(e.data.data);
+      shown = -1;
+    } else if (e.data.type === 'frame' && data && data.frames.length) {
+      const i = Math.max(0, Math.min(data.frames.length - 1, e.data.i | 0));
+      if (i !== shown) {
+        shown = i;
+        pose(i);
+        renderer.render(scene, camera);
+      }
+    } else if (e.data.type === 'resize') {
+      resize();
+    }
+  });
+  parent.postMessage({ type: 'ready' }, location.origin);
+} else {
+  poll();
+  requestAnimationFrame(tick);
+}

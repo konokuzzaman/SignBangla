@@ -183,6 +183,44 @@ with rules: `build_sentence(words, is_question=False)` and `build_from_candidate
 - Shared file changed: `configs/config.yaml` gets `module3.lexicon_extra`, `module3.verb_tenses` and
   `module3.corpus`. Tests: `tests/test_sentence_corpus.py`. All 202 tests pass.
 
+## SignBangla app (19 Nov, phases 1-3)
+
+- **What it is:** `signbangla/app/` + `scripts/60_signbangla_app.py`, one local page (127.0.0.1:8800) for both
+  directions. Phase 1 = Speech → Sign; phase 2 = Sign → Text (camera, recogniser, sentence builder); phase 3 = tense
+  markers, fingerspelling and context prediction.
+- **Speech → Sign code:**
+  - `gloss.py`: text → sign words (verified signs only)
+  - `pipeline_speech2sign.py`: dictionary, speech model and push to talk via `speech2sign/audio.record`, loaded once
+  - `server.py`: the page and API
+  - `web/`: page, `skeleton.js` (2D view)
+- **Module 2 file changed:** `signbangla/speech2sign/web3d/studio3d.js` gets two opt-in additions:
+  - `camera.type: orthographic` (the straight-on camera of `scripts/experiments/studio3d/scene.html`)
+  - an embed mode (`viewer3d.html?embed`): the app page sends the sequence and every frame number, so the 3D and 2D
+    views share one clock
+
+  Without them the studio3d demo (`scripts/21 --style studio3d`) works exactly as before (perspective camera, polling).
+- **Shared file changed:** `configs/config.yaml` gets the `app` section. Tests: `tests/test_app.py`.
+- **Dictionary (Module 2 change):** `core_dictionary.py` now also loads the verified Ban-Sign-Sent-9K last signs and DU
+  signs (`extra_source_words`). Clips are chosen like the other sources. A row linked to a core word gets its key
+  (না → C035, দয়া করে → C063); phrases keep their D### key and are matched as a whole. `scripts/21` and the app
+  pass the B / S / D keys to the matcher.
+  - Rebuilt 19 Nov: **615 words**, all 211 verified word-list rows included.
+- **Phase 2 (Sign → Text):** `pipeline_sign2text.py` reuses Module 3's `CameraWorker`, `ScreenState` and `build_items`,
+  plus Module 1's model via `sign2text/recognizer.py`. Settings `app.sign`; the checkpoint path is
+  `app.sign.checkpoint` (swap it for the fine-tuned model; the word list must have as many words).
+  - **Module 3 change:** `CameraWorker` reads an optional `camera_size` from its settings (the app asks for 640 x 480).
+    Module 3's own screen does not set it.
+  - Tests: `tests/test_app_sign.py`.
+- **Phase 3:**
+  - `gloss.py`: tense / negation markers from `data/module3/verbs.csv`, `verb_tenses.csv` and `corpus_rules.json`
+    (verified marker signs only; হবে and আগে are not used yet).
+  - `predict.py`: n-gram or fill-mask context prediction; log `work/app/predictions.csv`.
+  - Scripts: `scripts/61` (prediction evaluation) and `62` (voice cache).
+  - **Module 3 change:** `CameraWorker` reads an optional `flip_input`. Module 3's screen does not set it.
+  - The fill-mask model `csebuetnlp/banglabert_generator` (35M parameters) is in the Hugging Face cache. It is used
+    only with `app.predict.model: mlm`.
+  - Tests: `tests/test_app_predict.py`.
+
 ## What you need to do
 
 - **Python 3.11 is required.** Install it before creating the environment. `mediapipe==0.10.14` does not install on Python 3.13 or newer. Follow "Setup for Teammates" in `README.md`.

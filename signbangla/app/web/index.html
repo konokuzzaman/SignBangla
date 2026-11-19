@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SignBangla</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header>
+  <h1>SignBangla</h1>
+  <div id="status" class="status"></div>
+  <button id="open-tests" type="button" class="tests-button">Test sentences</button>
+</header>
+
+<dialog id="tests">
+  <h2>Test sentences</h2>
+  <p id="tests-summary" class="small"></p>
+  <div class="tests-scroll">
+    <table><thead><tr><th>Sentence</th><th>Signed</th><th>Signs</th><th>No sign</th></tr></thead>
+    <tbody id="tests-body"></tbody></table>
+  </div>
+  <form method="dialog"><button>Close</button></form>
+</dialog>
+
+<main>
+  <!-- Sign -> Text -->
+  <section class="panel" id="sign-panel">
+    <h2>Sign → Text <span id="vocab" class="note"></span></h2>
+    <div id="sign-message" class="notice" hidden></div>
+    <div class="sign-top">
+      <div class="camera">
+        <img id="video" alt="camera picture with the skeleton" hidden>
+        <div id="camera-off" class="camera-off">Camera off</div>
+        <span id="indicator" class="indicator">ready</span>
+      </div>
+      <div class="sign-side">
+        <div class="label">Signed words <small>(click one to see its top 5)</small></div>
+        <div id="items" class="items bn"></div>
+        <div class="label">Top 5 <span id="sel-word" class="bn"></span></div>
+        <div id="top5" class="top5 bn"></div>
+        <div id="last-event" class="small"></div>
+      </div>
+    </div>
+    <div id="sentence" class="sentence bn"></div>
+    <div class="sign-buttons">
+      <button id="done" type="button" class="primary">Done ✓</button>
+      <button id="undo" type="button">Undo last word</button>
+      <button id="clear" type="button">Clear</button>
+      <label class="question"><input type="checkbox" id="question"> Question</label>
+      <span id="spoken" class="small"></span>
+    </div>
+    <div class="manual">
+      <input id="word-search" class="bn" placeholder="Add a word by hand: type to search (বাংলা or English)" autocomplete="off">
+      <div id="word-buttons" class="word-buttons bn"></div>
+    </div>
+    <audio id="voice" preload="none"></audio>
+  </section>
+
+  <!-- Speech -> Sign -->
+  <section class="panel" id="speech-panel">
+    <h2>Speech → Sign</h2>
+    <div class="input-row">
+      <button id="talk" class="talk" type="button" title="Hold to speak (or hold the space bar)">
+        <span class="dot"></span><span id="talk-label">Hold to speak</span>
+      </button>
+      <form id="text-form" class="text-form">
+        <input id="text" class="bn" placeholder="অথবা এখানে লিখুন ... (or type here)" autocomplete="off">
+        <button type="submit">Sign it</button>
+      </form>
+    </div>
+    <div id="speech-message" class="notice" hidden></div>
+
+    <div class="viewer">
+      <div class="view-tools">
+        <div class="toggle" role="group" aria-label="View">
+          <button id="view-3d" type="button" class="on">3D</button>
+          <button id="view-2d" type="button">Skeleton</button>
+        </div>
+        <div class="toggle" role="group" aria-label="Speed" id="speeds"></div>
+        <button id="replay" type="button" title="Replay (R)">↻ Replay</button>
+      </div>
+      <div class="stage" id="stage">
+        <iframe id="viewer3d" title="3D signer" src="/viewer3d.html?embed"></iframe>
+        <canvas id="skeleton" class="hide"></canvas>
+        <div id="stage-empty" class="stage-empty">Say or type a sentence to see it signed.</div>
+      </div>
+      <div id="caption" class="caption bn"></div>
+    </div>
+
+    <dl class="result">
+      <dt>Heard</dt><dd id="heard" class="bn">-</dd>
+      <dt>Signs</dt><dd id="signs" class="bn">-</dd>
+    </dl>
+  </section>
+</main>
+
+<footer>
+  <div class="history-head">Conversation <span id="timings" class="timings"></span></div>
+  <ol id="history" class="history"></ol>
+</footer>
+
+<script type="module" src="/app.js"></script>
+</body>
+</html>

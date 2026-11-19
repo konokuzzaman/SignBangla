@@ -282,7 +282,8 @@ def main():
     core = work_dir(cfg) / s2s["core_vocab"]["dictionary_dir"]
     if s2s["use_core_dictionary"] and (core / "dictionary.json").exists():
         dictionary = SignDictionary(core)
-        matcher = WordMatcher.full(extra=dictionary_words(dictionary, "B"), **fuzzy)  # + verified BdSL-300 words
+        # + verified BdSL-300 (B), Ban-Sign-Sent-9K (S) and DU (D) words and phrases
+        matcher = WordMatcher.full(extra=dictionary_words(dictionary, ("B", "S", "D")), **fuzzy)
         print(f"Dictionary: {core.name} ({len(dictionary.words)} words"
               f"{', with unverified INCLUDE signs' if dictionary.info.get('use_unverified_signs') else ''})")
     else:

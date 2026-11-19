@@ -122,6 +122,10 @@ class CameraWorker(threading.Thread):
         if not cap.isOpened():
             self.state.update_camera(enabled=False, message=f"No camera found at index {self.index}. Words mode works.")
             return
+        size = self.scfg.get("camera_size")  # optional (the SignBangla app asks for 640 x 480)
+        if size:
+            cap.set(cv2.CAP_PROP_FRAME_WIDTH, size[0])
+            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, size[1])
         try:
             holistic = make_holistic(self.cfg)
         except Exception as e:  # noqa: BLE001
@@ -137,6 +141,8 @@ class CameraWorker(threading.Thread):
                 if not ok:
                     self.state.update_camera(enabled=False, message="The camera stopped sending pictures.")
                     break
+                if self.scfg.get("flip_input"):  # optional: a camera whose driver mirrors the picture
+                    bgr = cv2.flip(bgr, 1)
                 t = time.perf_counter()
                 h, w = bgr.shape[:2]
                 rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)

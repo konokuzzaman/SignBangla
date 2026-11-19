@@ -348,3 +348,81 @@ review_words:                           # scripts/tools/review_words.py: local p
   warn_ratio: 0.85                      # warning when within-word distance / distance to other words is above this
   warn_nearest: 0.0                     # ... or when at most this share of its clips has a clip of the same word as
                                         # nearest (0 = none; BdSL-300 has 204 words, so chance is 0.5%)
+app:                                    # SignBangla app: one page, both directions (signbangla/app, scripts/60)
+  host: "127.0.0.1"                     # local only
+  port: 8800
+  port_tries: 10                        # port busy: try the next ones
+  open_browser: true
+  web_dir: "signbangla/app/web"
+  history_max: 200                      # conversation lines kept on the page
+  speech:                               # Speech -> Sign
+    load_asr: true                      # false: typed text only (faster start, no speech model)
+    max_record_s: 20                    # push-to-talk stops by itself after this long
+  gloss:                                # text -> sign words (signbangla/app/gloss.py)
+    synonyms:                           # used only when the left word has no sign and the right one has
+      "পান করা": "খাওয়া"
+      "জল": "পানি"
+    phrase_verbs: ["পান করা"]           # "<noun> করা" verbs: every form of করা after the noun counts (পান করেছি)
+    drop_words: ["ও", "এবং", "আর", "তো", "যে", "কিন্তু", "তাহলে", "শুধু", "খুব", "কি"]  # not signed in BdSL
+                                        # (কি = yes/no particle: the question shows as the head tilt instead)
+    particles: ["কি"]                   # dropped even though কী ("what") has a sign: কি is the yes/no particle
+    time_first: true                    # BdSL order: time words first ...
+    question_last: true                 # ... question words last; otherwise the spoken order (subject object verb)
+    tense_markers: true                 # খাইনি -> খাওয়া নেই etc. (module3 verb tables + corpus rules), verified signs only
+  test_sentences: "data/app/test_sentences.csv"  # the Test sentences panel; coverage -> work/app/coverage.csv
+  coverage: "app/coverage.csv"          # inside work_dir
+  predict:                              # context prediction (signbangla/app/predict.py)
+    model: "ngram"                      # ngram (own sentences, instant) | mlm (pretrained fill-mask model below)
+    mlm_model: "csebuetnlp/banglabert_generator"  # 35M parameters; downloaded once, then offline
+    device: "auto"
+    unclear_below: 0.5                  # a camera sign whose top-1 probability is below this is unclear
+    lm_weight: 0.5                      # combined = (1 - w) log P(recogniser) + w log P(context)
+    min_score: 0.35                     # best combined probability below this: show "…" instead of a guess
+    gap_min_score: 0.3                  # gap word from the whole vocabulary: needs at least this probability
+    speech: true                        # Speech -> Sign: suggest a signed word for a spoken word without a sign
+    speech_similarity_weight: 0.5       # its score = (1 - w) context + w closeness (spelling, same category)
+    speech_min_score: 0.5
+    log: "app/predictions.csv"          # inside work_dir: every prediction and what the user did with it
+    eval: "app/prediction_eval.csv"     # inside work_dir: scripts/61
+  speeds: [0.5, 1.0]
+  sign:                                 # Sign -> Text (signbangla/app/pipeline_sign2text.py)
+    camera_index: 0                     # --camera N on the command line; --no-camera switches it off
+    camera_size: [640, 480]
+    checkpoint: "work/bdslw401/results/results/bigru/best_model.pt"  # swap for a fine-tuned model with more words
+    word_list: "data/BdSLW401/word_list.csv"   # class index -> word; must have as many words as the checkpoint
+    device: "auto"                      # auto | cuda | cpu
+    top_k: 5
+    sentence_end_s: 1.5                 # hands down this long after a camera word: the sentence is finished
+    poll_ms: 250                        # the page asks for camera news this often
+    video_width: 640                    # camera picture sent to the page (MJPEG)
+    jpeg_quality: 75
+    mirror_display: true                # show the camera like a mirror (the keypoints are not mirrored)
+    flip_input: false                   # true only for a camera whose driver mirrors the picture (the page warns)
+    framing:                            # live hint; the dataset videos: shoulders 0.26 of the frame width (IQR
+      shoulder_width: [0.17, 0.38]      # 0.24-0.30), centred, never mirrored (checked on 600 BdSLW401 / BdSLW60 clips)
+      centre_x: [0.35, 0.65]
+    speech_cache: "app/speech_cache"    # inside work_dir: spoken sentences (mp3), reused
+    voice: "bn-BD-NabanitaNeural"       # female Bangla voice of signbangla/sign2speech
+    segment:                            # cutting the stream into signs (sign2text/segmentation.py)
+      raise_frac: 0.5                   # a wrist above this point between shoulders (0) and hips (1) = signing
+      torso_ratio: 1.6                  # hips not visible: assumed this many shoulder widths below the shoulders
+      end_s: 0.4                        # a sign ends after a short pause (hands lowered or still this long)
+      min_s: 0.4                        # shorter movements are ignored
+      max_s: 4.0                        # a sign longer than this is cut
+      still_speed: 0.2                  # wrist speed (shoulder widths per second) below which the hands count as still
+      preroll_s: 0.2                    # frames kept from before the start
+      margin_s: 0.1                     # frames kept after the last movement
+  viewer3d:                             # the studio3d mannequin inside the page, with a straight-on camera
+    camera:
+      type: "orthographic"              # as scripts/experiments/studio3d/scene.html: signs near the face land right
+      half_height: 1.75                 # shoulder widths shown above and below the centre (upper body, as the
+      center_y: -0.55                   # 2D view; scene.html's full body is 2.42 / -1.2)
+      tilt_deg: 7                       # camera slightly above, looking down
+      distance: 12
+      min_half_width: 1.9               # narrow panels: zoom out so this much stays in view each side
+  skeleton:                             # the 2D canvas view (web/skeleton.js), same frames as the 3D view
+    center_y: -0.55
+    half_height: 1.75
+    line_width: 0.06                    # shoulder widths
+    colors: {background: "#ffffff", body: "#374150", head: "#e3e7ec", face: "#5d6673", right_hand: "#f58a28",
+             left_hand: "#2f80ed"}

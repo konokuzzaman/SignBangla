@@ -193,8 +193,9 @@ def unknown_words(matches):
 
 
 def dictionary_words(dictionary, prefix):
-    """(key, Bangla, '', '', category) rows for the dictionary words whose key starts with `prefix` (the verified
-    BdSL-300 words have keys B###), for WordMatcher.full(extra=...)."""
+    """(key, Bangla, '', '', category) rows for the dictionary words whose key starts with `prefix` (a string or a
+    tuple of them: verified BdSL-300 words have keys B###, Ban-Sign-Sent-9K S###, DU D###), for
+    WordMatcher.full(extra=...)."""
     return [(k, "/".join(e.get("bangla", [])), "", "", e.get("category", "word"))
             for k, e in dictionary.words.items() if k.startswith(prefix) and e.get("bangla")]
 

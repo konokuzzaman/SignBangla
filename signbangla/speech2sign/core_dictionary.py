@@ -1,5 +1,6 @@
 """The core sign dictionary: BdSLW60 + BdSLW401 + core vocabulary (BdSL40, BDSL49 digits, INCLUDE if allowed) + the
-BdSL-300 words marked verified = true in data/core_vocab/word_list.csv (never the unverified ones).
+BdSL-300, Ban-Sign-Sent-9K (last signs) and DU dynamic words marked verified = true in data/core_vocab/word_list.csv
+(never the unverified ones).
 
     work/sign_dictionary_core/   same layout as work/sign_dictionary (see dictionary.py), plus per word: source,
                                  verified and category; and digit_poses.npy (the handshape pose of each digit ০-৯), so
@@ -160,6 +161,85 @@ def bdsl300_words(cfg, verified):
     return out
 
 
+EXTRA_SOURCES = ("BanSign9K", "DynamicDU")  # word-list sources with their own clips (scripts/47 and 49)
+
+
+def extra_source_clips(cfg, source):
+    """{clip group: [(npy path, fps, width, height, stem)]} of the good clips of one extra source. Groups: the
+    Ban-Sign-Sent-9K word id (na, nei, ...) or the DU class folder."""
+    out = defaultdict(list)
+    if source == "BanSign9K":
+        c = cfg["bansign9k"]
+        base, clips = work_dir(cfg) / c["dir"], work_dir(cfg) / c["keypoints_dir"] / "last_sign"
+        if not (base / "cuts.csv").exists() or not (base / "word_quality.csv").exists():
+            return out
+        ids = {_nfc(r.word): r.word_id for r in pd.read_csv(base / "word_quality.csv", encoding="utf-8-sig",
+                                                            keep_default_na=False).itertuples()}
+        cuts = pd.read_csv(base / "cuts.csv", encoding="utf-8-sig", keep_default_na=False)
+        for r in cuts[cuts["good"].astype(str) == "True"].itertuples():
+            wid = ids.get(_nfc(r.word))
+            if wid:
+                out[wid].append((clips / f"{wid}__{r.stem}.npy", float(r.fps), int(r.width), int(r.height), r.stem))
+    elif source == "DynamicDU":
+        c = cfg["dynamic_du"]
+        base, trials = work_dir(cfg) / c["dir"], work_dir(cfg) / c["keypoints_dir"] / "trials"
+        if not (base / "quality_report.csv").exists():
+            return out
+        q = pd.read_csv(base / "quality_report.csv", encoding="utf-8-sig", keep_default_na=False)
+        for r in q[q["ok"].astype(str) == "True"].itertuples():
+            out[r.folder].append((trials / f"{r.stem}.npy", float(r.fps), int(r.width), int(r.height), r.stem))
+    return out
+
+
+def _nfc(text):
+    import unicodedata
+    return unicodedata.normalize("NFC", str(text)).strip()
+
+
+def core_id_for(bangla):
+    """The core word (C###) spelled like `bangla` (any of its variants), or ''. For rows without a core_id."""
+    names = {_nfc(v) for v in split_variants(bangla.replace(" / ", "/"))}
+    return next((key for key, b, _e, _c in cv.CORE_WORDS if names & {_nfc(v) for v in split_variants(b)}), "")
+
+
+def extra_source_words(cfg, rows):
+    """Verified Ban-Sign-Sent-9K and DU rows of the word list -> {key: (entry, chosen trials)}, chosen like the other
+    sources (quality checks, one signing hand, duration near the word's median). A row linked to a core word (core_id,
+    e.g. না -> C035) gets that key; others keep their S### / D### id. Phrases (DU) keep all their words in the entry,
+    so the text matcher can find them as a whole."""
+    s2s = cfg["speech2sign"]
+    out, missing = {}, []
+    clips = {source: extra_source_clips(cfg, source) for source in EXTRA_SOURCES}
+    for r in rows:
+        if r.get("source") not in EXTRA_SOURCES or not b3.is_true(r.get("verified")):
+            continue
+        source = r["source"]
+        found = clips[source].get(r.get("folder", ""), [])
+        if not found and source == "BanSign9K":  # rows without a folder: match the word itself
+            ids = {_nfc(w): w for w in clips[source]}
+            found = clips[source].get(ids.get(_nfc(r["bangla"]), ""), [])
+        cands = []
+        for path, fps, width, height, stem in found:
+            if path.exists():
+                cand = candidate(np.load(path), fps, width, height, cfg, f"{source}/{stem}", trim=False)
+                if cand:
+                    cands.append(cand)
+        chosen = choose(cands, s2s["n_trials"], s2s["hand_weight"])
+        if not chosen:
+            missing.append((r["id"], r["bangla"], "no clip passed the checks" if found else "no clips found"))
+            continue
+        core_id = r.get("core_id", "") or core_id_for(r["bangla"])
+        key = core_id or r["id"]
+        meta = (dict(core_entry(core_id, source), verified=True) if core_id else
+                dict(bangla=split_variants(r["bangla"].replace(" / ", "/")), romanized=[], english=r["english"],
+                     category=r["category"], source=source, verified=True))
+        meta["word_list_id"] = r["id"]
+        out[key] = (meta, chosen)
+    for word_id, bangla, why in missing:
+        print(f"  {word_id} {bangla}: verified but {why}")
+    return out
+
+
 def core_entry(word_id, source):
     _, bangla, english, category = next(r for r in cv.CORE_WORDS if r[0] == word_id)
     return dict(bangla=split_variants(bangla), romanized=[], english=english, category=category, source=source,
@@ -223,9 +303,12 @@ def build_core_dictionary(cfg, use_unverified=None):
     for key, value in bdsl300_words(cfg, b3.verified_words(ROOT / c["word_list"])).items():
         if key not in found or not found[key][0]["verified"]:  # a verified BdSL-300 sign replaces an unverified one
             found[key] = value
+    for key, value in extra_source_words(cfg, b3.read_word_list(ROOT / c["word_list"])).items():
+        if key not in found or not found[key][0]["verified"]:  # the same rule for Ban-Sign-Sent-9K and DU signs
+            found[key] = value
     found.update(bdslw401_words(cfg, skip=set(words)))
 
-    order = ([r[0] for r in cv.CORE_WORDS] + sorted(k for k in found if k.startswith("B"))
+    order = ([r[0] for r in cv.CORE_WORDS] + sorted(k for k in found if k[0] in "BSD")
              + sorted((k for k in found if k.startswith("W")), key=lambda k: int(k[1:])))
     for key in order:
         if key not in found or key in words:
