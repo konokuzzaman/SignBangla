@@ -1,0 +1,402 @@
+﻿number,bangla,english
+1,বাবা/আব্বা,Father
+2,আত্মীয়,Relatives
+3,ভাই,Brother
+4,বোন,Sister
+5,বৌ,Wife
+6,চাচা,Paternal Uncle
+7,চাচী,Wife of Paternal Uncle
+8,দাদা/নানা,Grandfather/Maternal grandfather
+9,দাদী/নানী,Grandmother/Maternal Grandmother
+10,দায়িত্ব,Responsibility
+11,দেবর,Husband's Younger Brother (Brother-in-Law)
+12,দুলাভাই,Sister's Husband
+13,স্ত্রী,Wife
+14,ফুফা,Husband of Paternal Aunt
+15,ফুফু,Paternal Aunt
+16,জামাই,Husband
+17,খালা,Maternal Aunt
+18,খালু,Husband of Maternal Aunt
+19,কন্যা,Daughter
+20,মা,Mother
+21,মামা,Mother's Brother
+22,মামী,Mother's Brother's Wife
+23,ননদ,Husband's Sister
+24,পরিবার,Family
+25,পুত্র,Son
+26,শ্বাশুড়ি,Mother-in-Law
+27,শ্বশুর,Father-in-Law
+28,সতীন,Women who have the same husband
+29,ভাবী,Brother's Wife
+30,ভাগ্নে,Nephew (related to sister)
+31,ভাগ্নি,Niece (related to sister)
+32,ভায়রা,Wife's Sister's Husband
+33,ভালো,Good
+34,ভাস্তে,Nephew (related to brother)
+35,ভাস্তি,Niece (related to brother)
+36,ভাসুর,Husband's Elder Brother (Brother-in-Law)
+37,আম,Mango
+38,আলু,Potato
+39,আনারস,Pineapple
+40,আঙ্গুর,Grape
+41,আপেল,Apple
+42,বিস্কুট,Biscuit
+43,বরই,Jujube/Chinese Date
+44,কেক,Cake
+45,চা,Tea
+46,চাল,Rice
+47,চিনি,Sugar
+48,চিপস,Chips
+49,চকলেট,Chocolate
+50,ডাল,Lentil
+51,ডিম,Egg
+52,দুধ,Milk
+53,ফিডার,Feeder
+54,ফল,Fruit
+55,ফলের রস,Juice
+56,গাজর,Carrot
+57,গুড়,Unrefined Solid Brown Sugar
+58,আইস ক্রিম,Ice Cream
+59,ঝাল,Hot in Taste or Spicy
+60,কালোজাম,A unique Bangladeshi Sweet
+61,খাবার,Food
+62,খেজুর,Date
+63,কলা,Banana
+64,কমলা,Orange
+65,লেবু,Lemon
+66,লিচু,Lichi
+67,লবণ,Salt
+68,মাছ,Fish
+69,মাংস,Meat
+70,মিসটি,Sweet Taste
+71,মরিচ,Chilli Pepper
+72,পান,Betel Leaf
+73,পেয়ারা,Guava
+74,পোলাও,Rice cooked with oil
+75,রুটি,Flatbread
+76,সবজি,Vegetable
+77,সুপারি,Betel Nut
+78,তাল,Palmyra
+79,তেঁতুল,Tamarind
+80,তরমুজ,Melon
+81,ভাত,Cooked Rice
+82,আলতা,Alah or Mahavar
+83,আংটি,Ring
+84,আতর,A type of Perfume
+85,বাড়িওয়ালা,Landlord
+86,বেল্ট,Belt
+87,রক্তপাত,Bleed
+88,ব্লাউজ,Woman's Upper Garment
+89,বন্ধু,Friend
+90,বোরখা,A Loose Garment Covering the Entire Body
+91,বোতাম,Button
+92,টুপি,Cap
+93,চাদর,Shawl
+94,চিরুনি,Comb
+95,চশমা,Spectacles
+96,চুড়ি,Bangle
+97,ক্লিপ,Clip
+98,ক্রিম,Cream
+99,তথ্য,Data
+100,দেনাদার,Indebted
+101,দত্তক,Adopted Son/Daughter
+102,ফিতা,Ribbon
+103,ফতুয়া,A type of Men's Upper Garment
+104,গেঞ্জি,T-shirt
+105,ঘড়ি,Watch
+106,গ্লোভস,Gloves
+107,গলার হার,Necklace
+108,গ্রহীতা,Recipient
+109,গুরু,A Religious Leader or Teacher
+110,হাফপ্যান্ট,Halfpant
+111,জমজ,Twin baby
+112,জুতা,Shoe
+113,কাজল,Kohl
+114,কানের দুল,Ear Ring
+115,লিপিস্টিক,Lipstick
+116,লুঙ্গি,A long piece of cloth worn as a loincloth
+117,মেকআপ,Makeup
+118,মালিক,Owner
+119,মেহেদী,Henna
+120,মেহমান,Guest
+121,মোজা,Socks
+122,নেইলপলিশ,Nailpolish
+123,ওড়না,Scarf
+124,অভিভাবক,Guardian
+125,পায়জামা,Loose Fitting Trouser
+126,পাঞ্জাবি,A Loose Fitting Men's Upper Garment
+127,প্যান্ট,Pant
+128,পাওনাদার,Creditor
+129,পেটিকোট,Skirt of slip worn under a dress
+130,পারফিউম,Perfume
+131,পকেট,Pocket
+132,পাউডার,Powder
+133,প্রেমিক,Lover (man)
+134,প্রেমিকা,Lover (woman)
+135,প্রতিবেশী,Neighbor
+136,রূপা,Silver
+137,স্যানডেল,Slipper
+138,শ্যামপু,Shampoo
+139,শাড়ি,Vedic Women's Dress
+140,শেভ,Shave
+141,শার্ট,Shirt
+142,শেরওয়ানি,A Knee Length Coat Buttoning to the Neck
+143,শিষ্য,Disciple
+144,শুভাকাঙ্ক্ষী,Well-wisher
+145,সহকর্মী,Colleague
+146,সহপাঠী,Students who Study in the Same Class
+147,সমবয়সী,Of the Same Age
+148,সম্পর্ক,Relation
+149,সোনা,Gold
+150,শত্রু,Enemy
+151,ছোয়েটার,Sweater
+152,টাই,Tie
+153,টিপ,Tip
+154,ভাড়াটে,Tenant
+155,আঁচল,"Extension to a Garment, specially Shari"
+156,আলনা,Dress Hanger
+157,আলো,Light
+158,ব্যাগ,Bag
+159,বালিশ,Pillow
+160,বাঁশি,Flute
+161,বাথরুম,Bathroom
+162,বাটি,Bowl
+163,বিছা,A type of Ornament
+164,বিছানা,Bed
+165,বক্স,Box
+166,ব্রেসলেট,Bracelet
+167,বাল্ব,Bulb
+168,চেয়ার,Chair
+169,চামচ,Spoon
+170,ছাতা,Umbrella
+171,চুলের ব্যান্ড,Hair Band
+172,কোট,Coat
+173,কাপ,Cup
+174,ধুতি,A Loincloth
+175,দরজা,Door
+176,ফ্যান,Fan
+177,হুক,Huk
+178,জ্যাকেট,Jacket
+179,জানালা,Window
+180,জাঙগিয়া,Men's Undergarment
+181,জিন্স,Jeans
+182,জার্সি,Jersey
+183,ঝুড়ি,Basket
+184,কাঁচি,Scissors
+185,কামিজ,A Long Tunic Worn in the Indian Subcontinent
+186,কাঁটাচামচ,Fork
+187,খোঁপা,Braid
+188,খোঁপার কাঁটা,Hairpin
+189,খড়ম,A type of Slipper
+190,লকেট,Locket
+191,মাফলার,Neck Scarf
+192,মোড়া,Stool
+193,মশারি,Mosquito Net
+194,নাকফুল,Nose-pin
+195,নাইটি,Nighty
+196,নোলক,Nose Ring
+197,নুপুর,Anklet
+198,পাগড়ি,Turban
+199,প্লেট,Plate
+200,রেইনকোট,Raincoat
+201,সালোয়ার,Women's Trouser
+202,স্কার্ফ,Scarf
+203,সেমিজ,Women's Undergarment
+204,সানগ্লাস,Sunglasses
+205,সুতা,Thread
+206,টেবিল,Table
+207,টেলিফোন,Telephone
+208,টাইপিন,Tiepin
+209,টিকলি,An ornament worn in the forehead
+210,টুথব্রাস,Toothbrush
+211,টুথপেস্ট,Toothpaste
+212,টিশার্ট,T-shirt
+213,টিউবলাইট,Tube Light
+214,টিভি,TV
+215,এসি,AC
+216,অ্যাপার্টমেন্ট,Apartment
+217,অডিও ক্যাসেট,Audio Cassette
+218,আয়না,Looking Mirror
+219,বালতি,Water Bucket
+220,বালু,Sand
+221,বেড়ার ঘর,A type of Hut
+222,বেসিন,Basin
+223,বিছানার চাদর,Bed Sheet
+224,বদনা,Toilet Wash Jug
+225,বুকশেল্ভ,Bookshelf
+226,ব্রিফকেস,Briefcase
+227,কলিং বেল,Calling Bell
+228,ক্যাসেট প্লেয়ার,Cassette Player
+229,চাদ,Moon
+230,ছাকুনি,Strainer
+231,চুলা,Cooker/Stove
+232,দালান,Building
+233,দেয়াল,Wall
+234,ইট,Brick
+235,এলোমেলো,Haphazard
+236,ফ্রিজ,Fridge
+237,ফ্রাই প্যান,Fry Pan
+238,ফুলদানি,Flower Vase
+239,গালিচা,Rug/Carpet
+240,গামছা,Towel
+241,ইস্ত্রি,Iron
+242,ঝাড়ু,Broom
+243,জগ,Jug
+244,কাঁথা,Decorated Bed Sheet
+245,কেটলি,Kettle
+246,কক্ষ,Room
+247,কুয়া,Well
+248,কুড়ে ঘর,Hut
+249,লেপ,A type of Blanket
+250,লিফট,Lift
+251,মাটির ঘর,House Made of Mud
+252,মেঝে,Floor
+253,মোমবাতি,Wax Candle
+254,মগ,Mug
+255,নলকূপ,Tube Well
+256,পানির কল,Water Tap
+257,পর্দা,Curtain
+258,প্রেসার কুকার,Pressure Cooker
+259,পুকুর,Pond
+260,রেডিও,Radio
+261,রুমাল,Handkerchief
+262,সাবান,Soap
+263,সাজানো,Arrange/Furnish/Organize
+264,সিমেন্ট,Cement
+265,সিঁড়ি,Stairs
+266,সোফা,Sofa
+267,সুটকেস,Suitcase
+268,সুইস,Switch
+269,টেবিল ল্যাম্প,Table Lamp
+270,টিনের ঘর,House with Roof of Iron Sheets
+271,টর্চ লাইট,Torchlight
+272,উপকরণ,Ingredients
+273,বারান্দা,Veranda
+274,ওয়াশিং মেশিন,Washing Machine
+275,এ্যাসট্রে,Ashtray
+276,ব্লেন্ডার,Blender Machine
+277,বটি,A Long Curved Blade
+278,চাকু,Knife
+279,চিমনি,Chimney
+280,ছিটকিনি,Tower Bolt for Door
+281,দা,Long Cutting Blade
+282,দিয়াশলাই,Match Stick
+283,ডিটারজেন্ট পাউডার,Detergent Powder
+284,দড়ি,Rope
+285,গ্রিল,Grill
+286,হ্যাঙ্গার,Hanger
+287,হারিকেন,Oil Lantern
+288,কম্বল,Blanket
+289,কমোড,Commode
+290,করাত,Saw
+291,মাইক্রোওয়েভ ওভেন,Microwave Oven
+292,পাপোস,Door Mat
+293,পেরেক,Nail
+294,রামদা,A type of Long blade
+295,স্ক্রু,Screw
+296,ট্যাংকি,Tank
+297,তার,Wire
+298,টব,Flower Tub
+299,টয়লেট টিস্যু,Toilet Tissue
+300,উঠান,Lawn
+301,আলকাতরা,Tar
+302,বাঁশ,Bamboo
+303,বেলুনি,Roti Roller
+304,বটল,Bottle
+305,বয়াম,Jar
+306,ছাউনী,Shed
+307,ছড়ি,Walking Stick
+308,চুন,Lime
+309,ঢাকনা,A Cover
+310,দোলনা,Cradle
+311,ঢোল,Drum
+312,ড্রয়ার,Drawer
+313,ফাইল,File
+314,ফ্লাস্ক,Flask
+315,ফোম,Foam
+316,ফোল্ডার,Folder
+317,গামলা,Big Bowl
+318,ঘরের খুঁটি,Pillar
+319,গদি,Sitting place
+320,গোয়াল ঘর,Cattle House
+321,হামান দিস্তা,Pounder/Mortar
+322,হাঁড়ি,Cooking Pan
+323,হাতুড়ি,Hammer
+324,ঝুল ঝাড়ু,Broom Stick
+325,জুতার তাক,Shoe Rack
+326,কাস্তে,Sickle
+327,খড়,Straw
+328,খুন্তি,Cooking Spud
+329,কোকিল,Koyel
+330,কুশন,Kushon/Cushion
+331,লাইটার,Lighter
+332,মাদুর,Mat
+333,মই,Ladder
+334,নিড়ানি,Weeder
+335,পাখা,Hand Fan
+336,পান,Pan
+337,পাঞ্চিং মেশিন,Punching Machine
+338,পিন,Pin
+339,প্লাস্টিক,Plastic
+340,প্লাগ,Plug
+341,প্রাসাদ,Castle
+342,প্রদীপ,Lamp
+343,সেচ,Watering
+344,সেলাই মেশিন,Sewing Machine
+345,শাওয়ার,Shower
+346,স্ট্যাপলার,Stapler
+347,সুঁই,Needle
+348,তাবু,Tent
+349,তাক,Rack
+350,টিফিন ক্যারিয়ার,Tiffin Carrier
+351,এইডস,AIDS
+352,বাত,Arthritis
+353,ব্যান্ডেজ,Bandage
+354,ক্যাপসুল,Capsule
+355,চিকিৎসা,Treatment
+356,চোখ ওঠা,Conjunctivitis
+357,ডেঙ্গু,Dengue
+358,ডক্টর,Doctor
+359,দংশন,Bite
+360,দূর্বল,Weak
+361,ফোঁড়া,Skin Infection or Abscess
+362,ঘামাচি,Heat Rash
+363,গলগণ্ড,Goitre
+364,হোমিওপ্যাথি,Homeopathy
+365,হসপিটাল,Hospital
+366,হৃদরোগ,Cardiac Disease
+367,ইনজেকশন,Injection
+368,জিবাণু,Germ
+369,যক্ষ্মা,Tuberculosis
+370,জন্ডিস,Jaundice
+371,জ্বর,Fever
+372,কাশি,Cough
+373,ক্ষত,Injury
+374,ক্রিমি,Worm
+375,মাস্ক,Mask
+376,মাথা ব্যাথা,Headache
+377,ম্যালেরিয়া,Malaria
+378,মলম,Ointment
+379,নিরাময়,Heal
+380,নার্স,Nurse
+381,অবস,Paralyzed
+382,অজ্ঞান,Senseless
+383,অনিদ্রা,Insomnia
+384,অপুষ্টি,Poor Nutrition
+385,অরুচি,Lack of Appetite
+386,অসস্তি,Uncomfortable
+387,অসুস্থ,Sick
+388,অস্ত্রোপচার,Surgery
+389,ঔষধ,Medicine
+390,স্যাভলন,Savlon
+391,সুস্থ,Healthy
+392,সংক্রামক,Contagious
+393,সর্দি,Cold
+394,স্টেথোস্কোপ,Stethoscope
+395,ট্যাবলেট,Tablet
+396,থার্মোমিটার,Thermometer
+397,তুলা,Cotton
+398,উন্মাদ,Mad
+399,ভাইরাস,Virus
+400,ভিটামিন,Vitamin
+401,এক্সরে,X-Ray

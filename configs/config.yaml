@@ -388,7 +388,7 @@ app:                                    # SignBangla app: one page, both directi
   sign:                                 # Sign -> Text (signbangla/app/pipeline_sign2text.py)
     camera_index: 0                     # --camera N on the command line; --no-camera switches it off
     camera_size: [640, 480]
-    checkpoint: "work/bdslw401/results/results/bigru/best_model.pt"  # swap for a fine-tuned model with more words
+    checkpoint: "work/results/dual_stream_bigru/best_model.pt"  # 82.84% SOTA Dual-Stream BiGRU model (401 words)
     word_list: "data/BdSLW401/word_list.csv"   # class index -> word; must have as many words as the checkpoint
     device: "auto"                      # auto | cuda | cpu
     top_k: 5

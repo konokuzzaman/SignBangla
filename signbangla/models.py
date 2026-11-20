@@ -476,3 +476,93 @@ class BdSLKinematicGraphTransformer(nn.Module):
         # 6. Classification: (B, num_classes)
         return self.classifier(pooled)
 
+
+class DualStreamBiGRU(nn.Module):
+    """Dual-Stream Late-Fusion BiGRU for Sign Language Recognition (Module 1 Step 5).
+
+    Stream 1 (Global Motion): Shoulder-normalized pose/hands coordinates + joint velocity (402 dims).
+    Stream 2 (Hand Articulation & Bones): Wrist-relative hand shapes + finger bone vectors (246 dims).
+
+    Both streams pass through dedicated BiGRU encoders with temporal attention pooling,
+    and are fused into a unified classification head.
+    """
+
+    def __init__(
+        self,
+        stream1_dim: int = 402,
+        stream2_dim: int = 246,
+        hidden_dim: int = 128,
+        num_layers: int = 2,
+        num_classes: int = N_CLASSES,
+        dropout: float = 0.3,
+    ):
+        super().__init__()
+        self.stream1_dim = stream1_dim
+        self.stream2_dim = stream2_dim
+        self.hidden_dim = hidden_dim
+
+        # Stream 1: Global Motion Branch
+        self.proj1 = nn.Sequential(
+            nn.Linear(stream1_dim, hidden_dim),
+            nn.LayerNorm(hidden_dim),
+            nn.GELU(),
+            nn.Dropout(dropout / 2.0),
+        )
+        gru_dropout = dropout if num_layers > 1 else 0.0
+        self.gru1 = nn.GRU(
+            input_size=hidden_dim,
+            hidden_size=hidden_dim,
+            num_layers=num_layers,
+            batch_first=True,
+            bidirectional=True,
+            dropout=gru_dropout,
+        )
+        self.attn1 = TemporalAttention(hidden_dim * 2)
+        self.norm1 = nn.LayerNorm(hidden_dim * 2)
+
+        # Stream 2: Hand Articulation & Bones Branch
+        self.proj2 = nn.Sequential(
+            nn.Linear(stream2_dim, hidden_dim),
+            nn.LayerNorm(hidden_dim),
+            nn.GELU(),
+            nn.Dropout(dropout / 2.0),
+        )
+        self.gru2 = nn.GRU(
+            input_size=hidden_dim,
+            hidden_size=hidden_dim,
+            num_layers=num_layers,
+            batch_first=True,
+            bidirectional=True,
+            dropout=gru_dropout,
+        )
+        self.attn2 = TemporalAttention(hidden_dim * 2)
+        self.norm2 = nn.LayerNorm(hidden_dim * 2)
+
+        # Late Fusion Classifier Head
+        fused_dim = (hidden_dim * 2) * 2  # 256 + 256 = 512
+        self.classifier = nn.Sequential(
+            nn.Dropout(dropout),
+            nn.Linear(fused_dim, hidden_dim * 2),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_dim * 2, num_classes),
+        )
+
+    def forward(self, s1: torch.Tensor, s2: torch.Tensor) -> torch.Tensor:
+        # Stream 1
+        h1 = self.proj1(s1)
+        out1, _ = self.gru1(h1)
+        pooled1, _ = self.attn1(out1)
+        pooled1 = self.norm1(pooled1)
+
+        # Stream 2
+        h2 = self.proj2(s2)
+        out2, _ = self.gru2(h2)
+        pooled2, _ = self.attn2(out2)
+        pooled2 = self.norm2(pooled2)
+
+        # Late fusion
+        fused = torch.cat([pooled1, pooled2], dim=-1)
+        return self.classifier(fused)
+
+
